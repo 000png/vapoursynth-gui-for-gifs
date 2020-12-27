@@ -20,6 +20,8 @@ Next, we need to install some VapourSynth plugins. Luckily, the VSRepo GUI makes
 * `descale`
 * `havsfunc`
 * `lsmas`
+* `muvsfunc`
+* `mvmulti`
 
 Feel free to add any other plugins you want to use; that being said, my GUI only supports/generates code for certain features of the above; you'll have to add the VapourSynth code yourself in order to use other plugins and features.
 

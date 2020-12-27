@@ -4,3 +4,5 @@ src/vapoursynth/*
 src/bin/*
 !src/bin/vsrepogui.json
 src/test.py
+src/work/*
+!src/work/README.md

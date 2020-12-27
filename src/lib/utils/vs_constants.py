@@ -35,3 +35,14 @@ DENOISE_CONFIG = {
         "matrix": "709"      # matrix (color matrix of input clips)
     }
 }
+
+SHARPEN_PLUGINS = {
+    'fun': 'import G41Fun as fun'
+}
+
+SHARPEN_CONFIG = {
+    'None': None,
+    'FineSharp': {
+        'sstr': 0.55
+    }
+}

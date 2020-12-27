@@ -3,6 +3,7 @@
 Layout containing options for Vapoursynth
 """
 import os
+import json
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QComboBox, \
     QLabel, QHBoxLayout, QVBoxLayout, QMessageBox, QPlainTextEdit, QFileDialog, \
@@ -13,13 +14,16 @@ import lib.utils.vs_constants as c
 from lib.utils.vs_utils import checkScript
 from lib.utils.vs_evaluate_options import evaluateVapourSynthOptions
 from lib.layouts.script_layout import OPENING_DEFAULT_SCRIPT
-from lib.widgets.denoise_options import DenoiseOptionKNLM, DenoiseOptionBM3D
+from lib.widgets.options_denoise_sharpen import DenoiseOptionKNLM, DenoiseOptionBM3D, FineSharpOptions
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 WORK_DIR = os.path.join(SCRIPT_DIR, '../../work')
 
 NO_VIDEO_LOADED_SCRIPT = 'A video must be loaded before the script can be generated and validated'
 TMP_FILENAME = f"{WORK_DIR}/tmp.vpy"
+
+PANEL_WIDTH = 300
+STACK_HEIGHT = 50
 
 class VSPanelLayout(QVBoxLayout):
     """
@@ -40,12 +44,14 @@ class VSPanelLayout(QVBoxLayout):
 
     def _generateVapourSynthOptions(self):
         """ Generate VapourSynth options """
+        # preprocessing
         self._preprocessor = QComboBox()
         for item in c.PREPROCESSOR_CONFIG.keys():
             self._preprocessor.addItem(item)
         self._preprocessor.activated[str].connect(
             lambda text: self._addVapourSynthOption(text, 'preprocessor', c.PREPROCESSOR_PLUGINS, c.PREPROCESSOR_CONFIG))
 
+        # denoising
         self._denoiseFilters = QComboBox()
         for item in c.DENOISE_CONFIG.keys():
             self._denoiseFilters.addItem(item)
@@ -54,6 +60,15 @@ class VSPanelLayout(QVBoxLayout):
 
         self._knlmOptions = DenoiseOptionKNLM()
         self._bm3dOptions = DenoiseOptionBM3D()
+
+        # sharpening
+        self._sharpenFilters = QComboBox()
+        for item in c.SHARPEN_CONFIG.keys():
+            self._sharpenFilters.addItem(item)
+        self._sharpenFilters.activated[str].connect(
+            lambda text: self._addVapourSynthOption(text, 'sharpen', c.SHARPEN_PLUGINS, c.SHARPEN_CONFIG, self._setSharpenLayout))
+
+        self._fineSharpOptions = FineSharpOptions()
 
     def _addVapourSynthOption(self, text, key, vsPlugin, vsConfig, otherFuncToExecute=None):
         """ Add vapoursynth option data """
@@ -79,6 +94,13 @@ class VSPanelLayout(QVBoxLayout):
             self._denoiseStack.setCurrentWidget(self._knlmOptions) if text == 'KNLM' \
                 else self._denoiseStack.setCurrentWidget(self._bm3dOptions)
 
+    def _setSharpenLayout(self, text):
+        self._fineSharpOptions.save(ignoreErrors=True)
+        if text == 'None':
+            self._sharpen.hide()
+        else:
+            self._sharpen.show()
+
     def _generateWidgets(self):
         """ Generate other widgets """
         self._generateScriptButton = QPushButton("Generate Script")
@@ -95,23 +117,25 @@ class VSPanelLayout(QVBoxLayout):
 
         self._checkScriptOutput = QPlainTextEdit()
         self._checkScriptOutput.setReadOnly(True)
-        self._checkScriptOutput.setMaximumWidth(300)
+        self._checkScriptOutput.setMaximumWidth(PANEL_WIDTH)
 
     def _generateLayout(self):
         """ Generate layout """
         self.addLayout(utils.generateRow("Preprocessor:", self._preprocessor))
-        self.addLayout(utils.generateRow('Denoise', self._denoiseFilters))
 
         # stack denoise options
-        self._denoise = QWidget()
-        self._denoiseStack = QStackedLayout()
-        self._denoiseStack.addWidget(self._knlmOptions)
-        self._denoiseStack.addWidget(self._bm3dOptions)
-        self._denoise.setLayout(self._denoiseStack)
-        self._denoise.setMaximumWidth(300)
-        self._denoise.setMaximumHeight(50)
+        self.addLayout(utils.generateRow('Denoise', self._denoiseFilters))
+        self._denoise, self._denoiseStack = utils.generateStackedWidget(
+            [self._knlmOptions, self._bm3dOptions], PANEL_WIDTH, STACK_HEIGHT)
         self.addWidget(self._denoise)
         self._denoise.hide()
+
+        # stack sharpen options
+        self.addLayout(utils.generateRow("Sharpen", self._sharpenFilters))
+        self._sharpen, self._sharpenStack = utils.generateStackedWidget(
+            [self._fineSharpOptions], PANEL_WIDTH, STACK_HEIGHT)
+        self.addWidget(self._sharpen)
+        self._sharpen.hide()
 
         self.addLayout(utils.generateRow(self._generateScriptButton, self._checkScriptButton))
         self.addLayout(utils.generateRow(self._scriptToFileButton, self._renderButton))
@@ -128,7 +152,7 @@ class VSPanelLayout(QVBoxLayout):
     def _generateScript(self):
         """ Generate script and fill the editor box """
         script = self.toScript()
-        if script is None:
+        if not script:
             return
 
         old_script = self._scriptEditor.toPlainText()
@@ -157,6 +181,10 @@ class VSPanelLayout(QVBoxLayout):
 
     def _saveScriptToFile(self):
         """ Save script to specified file """
+        if 'video' not in self._data:
+            utils.clearAndSetText(self._checkScriptOutput, "A video must be loaded in order to generate and save a script")
+            return
+
         filename, _ = QFileDialog.getSaveFileName(self._parent, 'Save Script', "", "VapourSynth script (*.vpy)")
         if filename:
             self.scriptToFile(filename)
@@ -164,7 +192,28 @@ class VSPanelLayout(QVBoxLayout):
 
     def _renderVideo(self):
         """ Render video """
-        pass
+        if 'video' not in self._data:
+            utils.clearAndSetText(self._checkScriptOutput, "A video must be loaded in order to render it")
+
+    def _checkCanSaveOption(self, key, pWidget, stack, filterWidget, ignoreErrors):
+        """ Check if the option can be saved """
+        if pWidget.isVisible():
+            curWidget = stack.currentWidget()
+            if not curWidget.save(ignoreErrors=ignoreErrors):
+                print("can't save")
+                return False
+
+            self._data[key]['type'] = str(filterWidget.currentText())
+            self._data[key]['args'] = curWidget.args
+        else:
+            self._data[key] = None
+
+        return True
+
+    def _saveValues(self, ignoreErrors=False):
+        """ Save all fields """
+        return self._checkCanSaveOption('denoise', self._denoise, self._denoiseStack, self._denoiseFilters, ignoreErrors) and \
+            self._checkCanSaveOption('sharpen', self._sharpen, self._sharpenStack, self._sharpenFilters, ignoreErrors)
 
     def scriptToFile(self, filename=TMP_FILENAME):
         """ Generate script and save to file  """
@@ -186,15 +235,8 @@ class VSPanelLayout(QVBoxLayout):
         if 'video' not in self._data:
             return NO_VIDEO_LOADED_SCRIPT
 
-        # overwrite data with fields from values
-        if self._denoise.isVisible():
-            curWidget = self._denoiseStack.currentWidget()
-            if not curWidget.save():
-                return None
-            self._data['denoise']['type'] = str(self._denoiseFilters.currentText())
-            self._data['denoise']['args'] = curWidget.args
-        else:
-            self._data['denoise'] = None
+        if not self._saveValues():
+            return False
 
         # add stuff that will always be there + plugins
         videoData = self._data['video']

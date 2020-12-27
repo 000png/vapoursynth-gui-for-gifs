@@ -7,6 +7,7 @@ def evaluateVapourSynthOptions(data):
     """ Evaluate VapourSynth options """
     script = evaluatePreprocessorOptions(data.get('preprocessor', None))
     script += evaluateDenoiseOptions(data.get('denoise', None))
+    script += evaluateSharpenOptions(data.get('sharpen', None))
 
     return script
 
@@ -29,7 +30,6 @@ def evaluateDenoiseOptions(denoise):
 
     dType = denoise['type']
     args = denoise['args']
-
     result = f"\n# denoise option is {dType}"
 
     if dType == 'KNLM':
@@ -41,6 +41,25 @@ video = core.knlm.KNLMeansCL(video, d={args['d']}, a={args['a']}, s={args['s']},
 video = mvs.BM3D(video, sigma={args['sigma']}, radius1={args['radius1']}, profile1="{args['profile1']}", matrix="{args['matrix']}")
 """
     else:
-        raiseValueError(f'Unrecognized denoise filter {dType}')
+        raise ValueError(f'Unrecognized denoise filter {dType}')
+
+    return result
+
+
+def evaluateSharpenOptions(sharpen):
+    """ Evaluate sharpen """
+    if not sharpen:
+        return ''
+
+    sType = sharpen['type']
+    args = sharpen['args']
+    result = f'\n# sharpen option is {sType}'
+
+    if sType == 'FineSharp':
+        result += f"""
+video = fun.FineSharp(video, sstr={args['sstr']})
+"""
+    else:
+        raise ValueError(f'Unrecognized sharpen filter {sType}')
 
     return result
