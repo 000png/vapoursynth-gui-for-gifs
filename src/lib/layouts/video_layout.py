@@ -3,16 +3,20 @@
 Layout containing original video cut
 """
 from PyQt5.QtCore import QDir, Qt, QUrl
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QGridLayout, QPushButton, QSlider, QStyle, QLabel, QSizePolicy, QHBoxLayout
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QGridLayout, QPushButton, QSlider, QStyle, QLabel, QSizePolicy, QHBoxLayout, QStackedLayout
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QPainter, QBrush, QColor, QPen, QPalette
+
+from lib.widgets.resizable_rubber_band import ResizableRubberBand
 
 class DualVideoLayout(QGridLayout):
 
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         super().__init__()
         self._parent = parent
+        self._cropToggled = False
         self._buttons = []
 
         self._generateWidgets()
@@ -39,17 +43,24 @@ class DualVideoLayout(QGridLayout):
         self._slider.setTickPosition(QSlider.TicksBothSides)
         self._slider.sliderMoved.connect(self._setPosition)
 
-        # sync slider with first video
-        self._originalVideoLayout = VideoLayout(self._slider)
+        # sync slider/cropping with first video
+        self._container = QWidget()
+        self._originalVideoLayout = VideoLayout(parent=self._container, slider=self._slider)
+        self._originalVideoLayout.setContentsMargins(0, 0, 0, 0)
         self._previewVideoLayout = VideoLayout()
+
+        self._cropRectangle = ResizableRubberBand(parent=self._container)
+        self._cropRectangle.setVisible(self._cropToggled)
 
     def _generateLayout(self):
         """ Generate layout """
+        # control panel
+        self.setContentsMargins(0, 0, 0, 0)
         controlPanel = QHBoxLayout()
         controlPanel.addWidget(self._playButton)
         controlPanel.addWidget(self._slider)
 
-        self.addLayout(self._originalVideoLayout, 0, 0)
+        self.addWidget(self._container, 0, 0)
         self.addLayout(self._previewVideoLayout, 0, 1)
         self.addLayout(controlPanel, 1, 0, 1, 0)
 
@@ -77,19 +88,23 @@ class DualVideoLayout(QGridLayout):
         """ Load the video file """
         for button in self._buttons:
             button.setEnabled(True)
+
+        self._pauseIfPlaying()
         self._playButton.toggle()
         self._playButton.setIcon(self._parent.style().standardIcon(QStyle.SP_MediaPause))
 
         self._originalVideoLayout.loadVideoFile(filename)
         self._previewVideoLayout.loadVideoFile(filename)
 
+
 class VideoLayout(QVBoxLayout):
 
-    def __init__(self, slider=None):
-        super().__init__()
+    def __init__(self, parent=None, slider=None):
+        super().__init__(parent)
 
         self._videoPaused = True
         self._slider = slider
+
         self._start = 0
         self._end = 0
         self._duration = 0
@@ -102,14 +117,13 @@ class VideoLayout(QVBoxLayout):
         """
         # the video widget
         self._videoWidget = QVideoWidget()
-        self._videoWidget.resize(300, 300)
-        self._videoWidget.show()
         self.addWidget(self._videoWidget)
 
         # media player
         self._mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
         self._mediaPlayer.setVideoOutput(self._videoWidget)
         self._mediaPlayer.stateChanged.connect(self._mediaStateChanged)
+        self._mediaPlayer.setMuted(True)
 
         # if slider exists, sync video with slider
         if self._slider:

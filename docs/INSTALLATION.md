@@ -1,51 +1,30 @@
 # Installation & Setup
 
-This repo only provides an **overlay** to the already-impressive software built around VapourSynth. To setup, we need to generate a giant code dump of all the source code and plugins.
+Versions used:
 
-Versions used (all extracted to `src/vapoursynth64`):
-
-* [Python 3.8.7 (embedded)](https://www.python.org/downloads/release/python-387/)
-    * Use the `Windows embeddable package (64-bit)` version
-    * VapourSynth R52 seems to break on 3.9.x and 3.7.x (not sure about 3.6.x and 3.5.x)
-* [VapourSynth Portable R52](https://github.com/vapoursynth/vapoursynth/releases) (I used the x64 version; x32 will probably work but I haven't tried)
-* [VapourSynth Editor R19](https://forum.doom9.org/showthread.php?t=170965)
+* [Python 3.8.7 (embedded)](https://www.python.org/downloads/release/python-387/) (`Windows embeddable package (64-bit)` version)
+* PyQt5 v. 5.15 (this was pip installed and ported)
+* [VapourSynth Portable R52](https://github.com/vapoursynth/vapoursynth/releases) (x64 version)
 * [VSRepo GUI v. 0.9.5](https://github.com/theChaosCoder/VSRepoGUI/releases)
-* PyQt5 v. 5.12 (archive located under `resources` directory)
 
-## 1. Make the Source Directory
+## 1. Extract Source
+If you downloaded this repo correctly, there should be a `src/bin` directory where the only things in it are:
 
-If you downloaded this repo correctly, there should be a `src/vapoursynth` directory where the only things in it are:
-
-* `tcl` (directory)
-* `tkinter` (directory)
-* `_tkinter`
-* `tcl86t.dll`
-* `tk86t.dll`
 * `vsrepogui.json`
 
-You need to download the resources listed above and extract them all into this directory. I would suggest doing it in the order the sources are listed; if a preceding extraction complains that a certain file is already there, allow the overlay to **override** the existing base.
+All you need to do is extract `resources/python3.8.7.7z` into this directory. This comes with Python 3.8.7, PyQt5 v. 5.15, VapourSynth R52 (portable), and the VSRepo GUI, which we'll need for the next step.
 
-Also make sure you are downloading the embedded/portable versions; otherwise you may be forced to install a lot of other stuff. And if you're a coder like me that could potentially really mess up your environment. The Python version probably doesn't really matter as long as its >= 3.5 but you may as well download the latest one. As far as I know there shouldn't be breaking changes between versions for what we're doing (e.g. no walrus operators here).
+## 2. Download Plugins
+Next, we need to install some VapourSynth plugins. Luckily, the VSRepo GUI makes this easy. Go to the `src/bin` directory and run the `VSRepoGUI` application (has a pusheen icon), navigate to the **Full List** tab, and download the following (download speeds will vary):
 
-## 2. Verify the Installation
+* `descale`
+* `havsfunc`
+* `lsmas`
 
-A quick way to verify the (portable) installation is to make sure that the executables are functioning. Make sure the following work without complaints:
+Feel free to add any other plugins you want to use; that being said, my GUI only supports/generates code for certain features of the above; you'll have to add the VapourSynth code yourself in order to use other plugins and features.
 
-* `VSRepoGUI.exe` (has a pusheen icon): This is used to download plugins; we will be using more of this later. Just make sure this opens without error.
+### Notes
 
-![VSRepoGUI Success](./vsrepo_gui_success.png)
+You may be familiar with the [VapourSynth Editor](https://forum.doom9.org/showthread.php?p=1688477). While this is a great application, the way its set up unfortunately seems to clash with PyQt5 as I'm using it here (tldr; it seems in the ported version both use Qt but build/reference it differently), so do NOT try to integrate this into the above `src/bin` directory. If you want to use the editor, please download it separately (meaning you might have two copies of VapourSynth).
 
-* `vsedit.exe` (has a vs icon): This is the VapourSynth editor; this is where VapourSynth code will actually get executed. Again, make sure this opens without error, but we also need to check VapourSynth (and `tkinter`, which is what my GUI uses) is configured properly. Copy and paste the following dummy script in, then go to `Script->Check Script`; the logs should report no errors.
-
-```
-import PyQt5 as pyqt # this is actually unrelated to vapoursynth, this is for zero's gui :)
-import vapoursynth as vs
-from vapoursynth import core
-
-video = core.std.BlankClip(width=640,height=480, format=vs.RGB24, length=500, fpsnum=2997, fpsden=125, color=[0, 0, 0])
-video.set_output()
-```
-
-![VapourSynth Editor Success](./vs_editor_success.png)
-
-If both those work you're pretty much good to go!
+If anyone can figure out how to get the two to play nice together _please_ let me know; but I already wasted a day on it (granted I barely know anything about any of this) so I'm not going to bother at this point :D

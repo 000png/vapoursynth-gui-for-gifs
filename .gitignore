@@ -3,3 +3,4 @@ src/vapoursynth/*
 !src/vapoursynth/vsrepogui.json
 src/bin/*
 !src/bin/vsrepogui.json
+src/test.py
