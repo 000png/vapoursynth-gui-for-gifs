@@ -10,8 +10,7 @@ OPENING_DEFAULT_SCRIPT = 'The generated script will appear here'
 class ScriptLayout(QGridLayout):
     def __init__(self, parent=None):
         """ Initializer """
-        super().__init__()
-        self._parent = parent
+        super().__init__(parent)
 
         self._generateWidgets()
         self._generateLayout()

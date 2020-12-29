@@ -9,16 +9,16 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QComboBox, \
     QLabel, QHBoxLayout, QVBoxLayout, QMessageBox, QPlainTextEdit, QFileDialog, \
     QStackedLayout, QStyle
 
-import lib.utils.pyqt_utils as utils
-import lib.utils.vs_constants as c
-from lib.utils.subprocess_utils import checkVSScript, renderVSVideo, TRIMMED_FILENAME
-from lib.utils.vs_evaluate_options import evaluateVapourSynthOptions
-from lib.layouts.script_layout import OPENING_DEFAULT_SCRIPT
-from lib.widgets.options_denoise_sharpen import DenoiseOptionKNLM, DenoiseOptionBM3D, FineSharpOptions
+import lib.utils.PyQtUtils as utils
+import lib.utils.VSConstants as c
+from lib.utils.SubprocessUtils import checkVSScript, renderVSVideo, TRIMMED_FILENAME
+from lib.utils.VSEvaluateOptions import evaluateVapourSynthOptions
+from lib.layouts.ScriptLayout import OPENING_DEFAULT_SCRIPT
+from lib.widgets.OptionsDenoiseSharpen import DenoiseOptionKNLM, DenoiseOptionBM3D, FineSharpOptions
 
 CWD = os.getcwd()
 SCRIPT_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-WORK_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..\\..\\work'))
+WORK_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..\\..\\..\\work'))
 TMP_VS_SCRIPT = os.path.abspath(os.path.join(WORK_DIR, 'tmp.vpy'))
 
 NO_VIDEO_LOADED_SCRIPT = 'A video must be loaded before the script can be generated and validated'
@@ -110,7 +110,7 @@ class VSPanelLayout(QVBoxLayout):
         """ Open file dialogue """
         filename, _ = QFileDialog.getSaveFileName(self._parent, 'Video Output Location', "", ';;'.join(self._outputFormats))
         if filename:
-            utils.clearAndSetText(self._outputFileText, filename)
+            utils.clearAndSetText(self._outputFileText, filename, setToBottom=False)
 
     def _generateWidgets(self):
         """ Generate other widgets """
@@ -131,11 +131,11 @@ class VSPanelLayout(QVBoxLayout):
         self._checkVSScriptButton = QPushButton("Check Script")
         self._checkVSScriptButton.clicked.connect(self._checkScriptOkay)
 
-        self._scriptToFileButton = QPushButton("Save script to file")
-        self._scriptToFileButton.clicked.connect(self.saveScriptToFile)
+        self._renderAutoButton = QPushButton("Render (auto)")
+        self._renderAutoButton.clicked.connect(lambda: self.renderVideo(regenerateScript=True))
 
-        self._renderButton = QPushButton('Render video')
-        self._renderButton.clicked.connect(self.renderVideo)
+        self._renderButton = QPushButton('Render (custom script)')
+        self._renderButton.clicked.connect(lambda: self.renderVideo(regenerateScript=False))
 
         self._outputTerminal = QPlainTextEdit()
         self._outputTerminal.setReadOnly(True)
@@ -171,7 +171,7 @@ class VSPanelLayout(QVBoxLayout):
         self._sharpen.hide()
 
         self.addLayout(utils.generateRow(self._generateScriptButton, self._checkVSScriptButton))
-        self.addLayout(utils.generateRow(self._scriptToFileButton, self._renderButton))
+        self.addLayout(utils.generateRow(self._renderButton, self._renderAutoButton))
         self.addWidget(self._outputTerminal)
 
     def setVideo(self, filename, duration):
@@ -189,8 +189,8 @@ class VSPanelLayout(QVBoxLayout):
         if not script:
             return False
 
-        script = script.strip('\n')
-        old_script = self._scriptEditor.toPlainText().strip('\n')
+        script = script.strip()
+        old_script = self._scriptEditor.toPlainText().strip()
 
         if script == NO_VIDEO_LOADED_SCRIPT:
             utils.clearAndSetText(self._outputTerminal, NO_VIDEO_LOADED_SCRIPT, clear=False, setTimestamp=True)
@@ -211,10 +211,25 @@ class VSPanelLayout(QVBoxLayout):
 
     def _checkScriptOkay(self):
         """ Check script is valid """
-        if self.scriptToFile(TMP_VS_SCRIPT):
+        regenerateScript = self._scriptEditor.toPlainText() == OPENING_DEFAULT_SCRIPT
+        if regenerateScript:
+            utils.clearAndSetText(self._outputTerminal, "No script set, auto generating script", clear=False, setTimestamp=True)
+
+        if self.scriptToFile(TMP_VS_SCRIPT, regenerateScript=regenerateScript):
             result, text = checkVSScript(TMP_VS_SCRIPT)
             utils.clearAndSetText(self._outputTerminal, text, clear=False, setTimestamp=True)
-            os.remove(TMP_VS_SCRIPT)
+
+    def scriptToFile(self, filename=TMP_VS_SCRIPT, regenerateScript=True):
+        """ Generate script and save to file  """
+        if not regenerateScript or self._generateScript():
+            script = self._scriptEditor.toPlainText()
+            if script == OPENING_DEFAULT_SCRIPT:
+                return False
+            with open(filename, 'w') as fh:
+                fh.write(script)
+            return True
+
+        return False
 
     def saveScriptToFile(self):
         """ Save script to specified file """
@@ -224,27 +239,27 @@ class VSPanelLayout(QVBoxLayout):
 
         filename, _ = QFileDialog.getSaveFileName(self._parent, 'Save Script', "", "VapourSynth script (*.vpy)")
         if filename:
-            filename = filename.strip('\n')
-            self.scriptToFile(filename)
+            filename = filename.strip()
+            self.scriptToFile(filename, regenerateScript=False)
             utils.clearAndSetText(self._outputTerminal, f"Script saved to {filename}", clear=False, setTimestamp=True)
 
-    def renderVideo(self):
+    def renderVideo(self, regenerateScript=True):
         """ Render video """
         if 'video' not in self._data:
             utils.clearAndSetText(self._outputTerminal, "A video must be loaded in order to render it", clear=False, setTimestamp=True)
             return
 
         fullFilePath = self._outputFileText.toPlainText()
-        fullFilePath = fullFilePath.strip('\n')
+        fullFilePath = fullFilePath.strip()
         filename, extension = os.path.splitext(fullFilePath)
         # reformat for png sequence
         if extension == '.png':
             filename += f"%05d{extension}"
             fullFilePath = os.path.join(os.path.dirname(fullFilePath), filename)
 
-        if self.scriptToFile(TMP_VS_SCRIPT):
-            start = self._trimStart.toPlainText().strip('\n')
-            end = self._trimEnd.toPlainText().strip('\n')
+        if self.scriptToFile(TMP_VS_SCRIPT, regenerateScript=regenerateScript):
+            start = self._trimStart.toPlainText().strip()
+            end = self._trimEnd.toPlainText().strip()
             result, cmd, msg = renderVSVideo(TMP_VS_SCRIPT, self._data['video']['filename'], fullFilePath, extension, start, end)
             utils.clearAndSetText(self._outputTerminal, f'Command: {cmd}', clear=False, setTimestamp=True)
             utils.clearAndSetText(self._outputTerminal, msg, clear=False, setTimestamp=True)
@@ -252,6 +267,11 @@ class VSPanelLayout(QVBoxLayout):
                 msgBox = utils.generateMessageBox(f"Rendering failed; check terminal for logs", icon=QMessageBox.Critical,
                                                   windowTitle="Invalid argument", buttons=QMessageBox.Ok)
                 msgBox.exec()
+            else:
+                # set new video in render panel
+                self._parent.setRenderVideo(self._outputFileText.toPlainText().strip())
+        else:
+            utils.clearAndSetText(self._outputTerminal, f'Failed to render video; make sure script is correct', clear=False, setTimestamp=True)
 
     def _checkCanSaveOption(self, key, pWidget, stack, filterWidget, ignoreErrors):
         """ Check if the option can be saved """
@@ -276,18 +296,6 @@ class VSPanelLayout(QVBoxLayout):
         """ Clear script output terminal """
         self._outputTerminal.clear()
 
-    def scriptToFile(self, filename=TMP_VS_SCRIPT):
-        """ Generate script and save to file  """
-        if self._generateScript():
-            script = self._scriptEditor.toPlainText()
-            if script == OPENING_DEFAULT_SCRIPT:
-                return False
-            with open(filename, 'w') as fh:
-                fh.write(script)
-            return True
-
-        return False
-
     def toScript(self):
         """ Convert data to executable python script """
         # if video has not been loaded, no script to make
@@ -303,7 +311,7 @@ class VSPanelLayout(QVBoxLayout):
 
         script = f"""#!./bin/python.exe
 import sys
-sys.path.append('../bin/scripts64')
+sys.path.append('../src/bin/scripts64')
 
 import vapoursynth as vs
 {plugins}
@@ -313,9 +321,6 @@ core = vs.get_core()
 
 video = core.lsmas.LWLibavSource(source=r"{videoData['trimmedFilename']}")
 video = core.fmtc.resample(video, css="444")
-
-# trim video
-#video = core.std.Trim(video, {videoData['trimStart']}, {videoData['trimEnd']})
 """
         # add options
         script += evaluateVapourSynthOptions(self._data)

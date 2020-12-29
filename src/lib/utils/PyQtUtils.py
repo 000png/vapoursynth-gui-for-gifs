@@ -4,7 +4,8 @@ General widget utils shared by everything
 """
 from datetime import datetime
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QMessageBox, QHBoxLayout, QLabel, QWidget, QStackedLayout, QPlainTextEdit
+from PyQt5.QtWidgets import QMessageBox, QHBoxLayout, QLabel, QWidget, \
+    QStackedLayout, QPlainTextEdit, QPushButton
 
 def generateMessageBox(message, icon=QMessageBox.Information, windowTitle="Info",
                        buttons=QMessageBox.Ok):
@@ -37,7 +38,7 @@ def generateRow(label, widgets, setZeroMargins=True):
     return layout
 
 
-def clearAndSetText(textWidget, text, clear=True, setTimestamp=False):
+def clearAndSetText(textWidget, text, clear=True, setTimestamp=False, setToBottom=True):
     """ Clear and set text widget """
     if setTimestamp:
         text = f"{datetime.now().time()} {text}"
@@ -45,8 +46,11 @@ def clearAndSetText(textWidget, text, clear=True, setTimestamp=False):
     if clear:
         textWidget.clear()
 
-    textWidget.insertPlainText(f"{text}\n\n")
-    textWidget.verticalScrollBar().setValue(textWidget.verticalScrollBar().maximum());
+    if setToBottom:
+        text = f"{text}\n\n"
+        textWidget.verticalScrollBar().setValue(textWidget.verticalScrollBar().maximum());
+
+    textWidget.insertPlainText(text)
 
 
 def generateStackedWidget(widgets, maxWidth=None, maxHeight=None):

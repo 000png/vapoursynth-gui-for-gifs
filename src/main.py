@@ -3,7 +3,7 @@ import sys
 sys.path.append('.')
 
 from PyQt5.QtWidgets import QApplication
-from lib.layouts.main_layout import MainLayout
+from lib.layouts.MainLayout import MainLayout
 
 
 if __name__ == "__main__":

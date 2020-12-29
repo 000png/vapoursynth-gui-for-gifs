@@ -7,7 +7,7 @@ import subprocess
 import vapoursynth as vs
 
 SCRIPT_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-WORK_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..\\..\\work'))
+WORK_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..\\..\\..\\work'))
 BIN_DIR = os.path.join(SCRIPT_DIR, '..\\..\\bin')
 VS_PIPE = os.path.abspath(os.path.join(BIN_DIR, 'VSPipe.exe'))
 FFMPEG = os.path.abspath(os.path.join(BIN_DIR, 'ffmpeg/bin/ffmpeg.exe'))

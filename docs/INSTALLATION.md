@@ -25,6 +25,16 @@ Next, we need to install some VapourSynth plugins. Luckily, the VSRepo GUI makes
 
 Feel free to add any other plugins you want to use; that being said, my GUI only supports/generates code for certain features of the above; you'll have to add the VapourSynth code yourself in order to use other plugins and features.
 
+## 3. Additional Downloads
+
+It is likely you will need to install codecs to get the GUI video player to work. If you ran the application manually you'll probably see an error similar to this in the terminal:
+
+```
+DirectShowPlayerService::doRender: Unresolved error code 0x80040266
+```
+
+Installing [K-lite codecs] or something similar will solve the issue (you should only need the basic version).
+
 ### Notes
 
 You may be familiar with the [VapourSynth Editor](https://forum.doom9.org/showthread.php?p=1688477). While this is a great application, the way its set up unfortunately seems to clash with PyQt5 as I'm using it here (tldr; it seems in the ported version both use Qt but build/reference it differently), so do NOT try to integrate this into the above `src/bin` directory. If you want to use the editor, please download it separately (meaning you might have two copies of VapourSynth).

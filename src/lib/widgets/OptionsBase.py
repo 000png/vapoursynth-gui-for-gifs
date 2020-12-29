@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QPlainTextEdit, QHBoxLayout, QLabel, QComboBox, \
     QMessageBox
 
-from lib.utils.pyqt_utils import generateMessageBox, generateTextEntry
+from lib.utils.PyQtUtils import generateMessageBox, generateTextEntry
 
 ARG_MAX_WIDTH = 40
 ARG_MAX_HEIGHT = 25

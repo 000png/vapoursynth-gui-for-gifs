@@ -1,0 +1,886 @@
+<!--
+    Visual resizer for avspmod script output.
+    Version: 0.2.0
+    Last Updated: Sep. 9, 2015
+
+    Original batch file setup: https://gist.github.com/aeukqegoih/a4850775fef55866bc08
+    For more information: http://dank.news/avhelp
+
+    * Changes *
+      0.2.0
+      - Added option for finesharp, adjusted resizer code to remain in YV12 colorspace during sharpening
+      - Small visual tweaks
+      - I made these changes yesterday and I can't remember
+      - Oops
+
+    * Additional Possible changes/fixes *
+      - auto-resize subject to fit when canvas is made larger than current subject size
+      - set max resize values to native width/height of the video
+      - add toggle to resize canvas manually by dragging
+      - add sliders for resizing canvas
+      - add display options for subject border/background color
+      - error checking on manual canvas value inputs
+      - error checking on opacity values
+      - add resize handles to all sides/corners (tried this some, couldn't get it working without breaking the position)
+      - fix/double-check rounded values for crop/resize, possibly add checks to make sure the leftover size after cropping is always equal to the size of the canvas
+      - fix location of subject when resized past canvas
+
+      Suggest things/ask me stuff:
+        http://brandinator.sexy
+        http://ask.brandinator.sexy
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Resizer</title>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/jquery-ui.min.js"></script>
+<style>
+    body {
+        overflow: hidden;
+        color: #ccc;
+        background-color: #333;
+    }
+
+    #settings, #output {
+        position: relative;
+        float: left;
+        clear: both;
+        z-index: 1;
+    }
+
+    #container { position: absolute; }
+
+    #target { line-height: 0; }
+
+    #target::after {
+        content: "";
+        display: block;
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        border: 1px dotted #999;
+        z-index: 1;
+    }
+
+    #canvas {
+        overflow: visible;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        box-shadow: 2px 2px 10px rgba(0,0,0,1);
+        pointer-events: none;
+    }
+
+    #canvas::before {
+        content:"";
+        pointer-events: none;
+        display: block;
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #fff;
+        z-index: -1;
+    }
+
+    .mask {
+        pointer-events: none;
+        position: absolute;
+        background-color: #333;
+        opacity: 0.98;
+    }
+
+     #topMask {
+        top: 0; left: 0;
+        width: 100%;
+    }
+
+    #bottomMask {
+        left: 0; bottom: 0;
+        width: 100%;
+    }
+
+    #leftMask {
+        top: 50%; left: 0;
+    }
+    #rightMask {
+        top: 50%; right: 0;
+    }
+
+    label {
+      display: inline-block;
+      text-align: right;
+      width: 125px;
+    }
+
+    input#opacity {
+      margin-right: 8px;
+      width: 25px;
+    }
+
+    #opacity-slider {
+        display: inline-block;
+        width: 150px;
+        height: 20px;
+        vertical-align: top;
+    }
+
+    #opacity-slider .ui-slider-handle {
+      top: 0;
+      height: 18px;
+    }
+
+.slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 15px;
+    border-radius: 5px;   
+    background: #eeeeee;
+    outline: none;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%; 
+    background: #e3e3e3;
+    cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: #e3e3e3;
+    cursor: pointer;
+}
+
+.slider2 {
+    -webkit-appearance: none;
+    width: 100px;
+    height: 15px;
+    border-radius: 5px;   
+    background: #eeeeee;
+    outline: none;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+}
+
+.slider2::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%; 
+    background: #e3e3e3;
+    cursor: pointer;
+}
+
+.slider2::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: #e3e3e3;
+    cursor: pointer;
+}
+
+    input#sharpen {
+      width: 200px;
+    }
+
+    #sharpen-check {
+
+    }
+
+    #output {
+        word-wrap: break-word;
+        margin-top: 10px;
+        top: 0;
+        right: 0;
+        position: absolute;
+        padding: 5px;
+        min-width: 400px;
+        color: #000;
+        background-color: #fff;
+        border: 1px solid #ccc;
+    }
+
+    input#dft {
+      width: 200px;
+    }
+
+    #dft-check {
+
+    }
+
+    #output {
+        word-wrap: break-word;
+        margin-top: 10px;
+        top: 0;
+        right: 0;
+        position: absolute;
+        padding: 5px;
+        min-width: 400px;
+        color: #000;
+        background-color: #fff;
+        border: 1px solid #ccc;
+    }
+
+    input#knlm {
+      width: 200px;
+    }
+
+    #knlm-check {
+
+    }
+
+    #output {
+        word-wrap: break-word;
+        margin-top: 10px;
+        top: 0;
+        right: 0;
+        position: absolute;
+        padding: 5px;
+        min-width: 400px;
+        color: #000;
+        background-color: #fff;
+        border: 1px solid #ccc;
+    }
+
+    input#bm {
+      width: 200px;
+    }
+
+    #bm-check {
+
+    }
+
+    #output {
+        word-wrap: break-word;
+        margin-top: 10px;
+        top: 0;
+        right: 0;
+        position: absolute;
+        padding: 5px;
+        min-width: 400px;
+        color: #000;
+        background-color: #fff;
+        border: 1px solid #ccc;
+    }
+
+    input#lsf {
+      width: 200px;
+    }
+
+    #lsf-check {
+
+    }
+
+    #output {
+        word-wrap: break-word;
+        margin-top: 10px;
+        top: 0;
+        right: 0;
+        position: absolute;
+        padding: 5px;
+        min-width: 400px;
+        color: #000;
+        background-color: #fff;
+        border: 1px solid #ccc;
+    }
+
+
+</style>
+</head>
+<body>
+    <div id="container">
+        <div id="target">
+             <video id="video" autoplay loop muted>
+                <source src="video_cut/cut_resizer.mp4" type="video/mp4">
+            </video>
+        </div>
+    </div>
+
+    <div id="topMask" class="mask"></div>
+    <div id="rightMask" class="mask"></div>
+    <div id="bottomMask" class="mask"></div>
+    <div id="leftMask" class="mask"></div>
+
+
+    <div id="canvas"></div>
+
+    <div id="settings">
+        <label for="gif-size">GIF Size:</label>
+        <input type="number" id="gif-size" step="1" name="width" value="268" class="gif-width" oninput="output.update(this);"> <input type="number" name="height" value="350" class="gif-height" oninput="output.update(this);">
+        <br>
+        <label for="opacity">Opacity:</label>
+        <input type="text" id="opacity" value="98" readonly disabled> <div id="opacity-slider"></div>
+
+        <form action="">
+            <label for="preprocessor" title="If the source video is interlaced (1080i .ts/.tp/.m2ts file) make sure you choose one of these qtgmc commands. In terms of quality: Slow >> Fast.">Preprocessor:</label>
+            <select id="preprocessor" onchange="output.processor();">
+                <option value="" selected>None</option>
+                <option value="video = haf.QTGMC(video, Preset=&quot;Fast&quot;, TFF=True, FPSDivisor=2)">qtgmc 30 fast</option>
+                <option value="video = haf.QTGMC(video, Preset=&quot;Slower&quot;, TFF=True, FPSDivisor=2)">qtgmc 30 slow</option>
+                <option value="video = haf.QTGMC(video, Preset=&quot;Fast&quot;, TFF=True)">qtgmc 60 fast</option>
+                <option value="video = haf.QTGMC(video, Preset=&quot;Slower&quot;, TFF=True)">qtgmc 60 slow</option>
+            </select>
+            <!-- <label for="resizer"></label> -->
+            <select id="resizer" onchange="output.resizer();">
+                <option value="debilinear" selected>debilinear</option>
+                <option value="resamplehq" >despline</option>
+            </select>
+
+        </form>
+
+        <form action="">
+        <label for="probando" title="Choose whatever filter you want. Keep in mind that this is completely optional and the results may vary depending on which one you choose. You can ignore this if your plan is to use Topaz Denoise.">Denoise Filters:</label>
+        <select id="probando" onchange="output.prob();">
+        	<option value="uno" selected>None</option>
+        	<option value="dos">KNLM</option>
+        	<option value="tres">BM3D</option>
+        </select>
+    	</form>
+
+        <form id="keinlm" action="" style="display: none;">
+        	<label for="knlm">KNLM:</label>
+        	<input type="range" id="knlm" value="0.01" min="1.20" max="9.99" step=".01" class="slider" oninput="output.denoise();"> <input type="checkbox" id="knlm-check" name="knlm-check">
+        </form>
+        <form id="dift" action="" style="display: none;">
+        	<label for="dft">VagueDenoiser:</label>
+        	<input type="range" id="dft" value="0.01" min="0.01" max="9.99" step=".01" class="slider" oninput="output.test();"> <input type="checkbox" id="dft-check" name="dft-check">
+    	</form>
+        <form id="vamos" style="display: none;">
+        	<label for="bm" title="">BM3D:</label>
+        	<input type="range" id="bm" value="0.01" min="2" max="16" step=".01" class="slider" oninput="output.blind();"> <input type="checkbox" id="bm-check" name="bm-check">
+        </form>
+        <form action="">
+        <label for="probando2">Sharpening:</label>
+        <select id="probando2" onchange="output.prob2();">
+            <option value="uno1" selected>None</option>
+            <option value="dos1">VCFreq</option>
+            <option value="tres1">FineSharp</option>
+        </select>
+        </form>
+        <form id="con" style="display: none;">
+            <label for="contra">VCFreq:</label>
+            <input type="checkbox" id="contra-check" name="contra-check" oninput="output.denoise();output.blind();output.test()">
+        </form>
+        <form id="fine" style="display: none;">
+            <label for="finesharp">FineSharp:</label>
+            <input type="range" id="finesharp" value="0.22" min="0.22" max="12" step=".01" class="slider2" oninput="output.mod();"> <input type="checkbox" id="fine-check" name="fine-check">
+        </form>
+    </div>
+
+    <div id="output">
+        <p id="preprocesssorOutput"></p>
+        <p id="resizerOutput"></p>
+        <p id="vcoutput" style="display:none">sharp = core.vcfreq.Sharp(video, 0, 0.48, 1, 1, 25, 0.28)</p>
+        <p id="knlmOutput"></p>
+        <p id="dftOutput"></p>
+        <p id="bmOutput"></p>
+        <p id="sawOutput"></p>
+        <p id="lsfOutput"></p>
+        <p id="contraOutput"></p>
+        <p id="cropOutput"></p>
+    </div>
+
+    <script>
+        var canvas, target, parent, subject, output, calculate, ratio;
+
+        canvas = $("#canvas");
+        target = $("#target");
+        parent = $("#container");
+        subject = $("#video");
+        output = {
+            result: $("#output"),
+            width: Number($(".gif-width").val()),
+            height: Number($(".gif-height").val()),
+            difference: {
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0
+            },
+            distance: {
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0
+            },
+            processor: function () {
+                var value = $("#preprocessor").val();
+                $("#preprocesssorOutput").html(value);
+            },
+
+            prob: function() {
+
+            	if (document.getElementById("probando").value == "uno") {
+
+            		document.getElementById("keinlm").style.display = "none";
+            		document.getElementById("vamos").style.display = "none";
+
+            	} else if (document.getElementById("probando").value == "dos"){
+
+            		document.getElementById("keinlm").style.display = "inline";
+            		document.getElementById("vamos").style.display = "none";
+            	
+            	} else if (document.getElementById("probando").value == "tres"){
+
+            		document.getElementById("keinlm").style.display = "none";
+            		document.getElementById("vamos").style.display = "inline";
+
+            	} else {
+
+            	}
+            },
+
+            prob2: function() {
+
+                if (document.getElementById("probando2").value == "uno1") {
+
+                    document.getElementById("con").style.display = "none";
+                    document.getElementById("fine").style.display = "none";
+
+                } else if (document.getElementById("probando2").value == "dos1"){
+
+                    document.getElementById("con").style.display = "inline";
+                    document.getElementById("fine").style.display = "none";
+                
+                } else if (document.getElementById("probando2").value == "tres1"){
+
+                    document.getElementById("con").style.display = "none";
+                    document.getElementById("fine").style.display = "inline";
+
+                } else {
+
+                }
+            },
+
+            contra: function () {
+            	var contraOutput,
+            		contraCheck = $("#contra-check").is(":checked"),
+            		contraValue = "video = haf.ContraSharpening(denoised=video2, original=video)";
+            	
+
+            	if ($('#knlm-check').is(':checked') && $('#contra-check').is(':checked')) {
+            		contraOutput = contraValue;
+            		document.getElementById("contraOutput").append()
+            	} else {
+            		$("#contraOutput").empty()
+            	}
+
+            	$("#contraOutput").html(contraOutput);
+            },
+
+            mod: function () {
+            	var lsfOutput,
+            		lsf = $("#finesharp").val(),
+            		lsfCheck = $("#fine-check").is(":checked"),
+                    lsfValue = "video = fun.FineSharp(video, sstr=" + lsf + ")";
+
+                if (lsfCheck) {
+                    $("#fine").removeAttr("readonly disabled");
+                    lsfOutput = lsfValue;
+                    document.getElementById("lsfOutput").append()
+                    //document.getElementById("knlmOutput").style.visibility = "visible";
+                } else {
+                    $("#finesharp").attr({ disabled: true, readonly: true });
+                    $("#lsfOutput").empty()
+                    //document.getElementById("knlmOutput").style.visibility = "hidden";
+                }
+
+                $("#lsfOutput").html(lsfOutput);
+            },
+            
+
+            denoise: function () {
+                var knlmOutput,
+                    knlm = $("#knlm").val(),
+                    knlmCheck = $("#knlm-check").is(":checked"),
+                    knlmValue = "video = core.knlm.KNLMeansCL(video, 0, 6, 4, " + knlm + ", channels=&quot;YUV&quot;)",
+                    knlmValue2 = "denoise = core.knlm.KNLMeansCL(video, 0, 6, 4, " + knlm + ", channels=&quot;YUV&quot;)",
+                    contraOutput,
+            		contraCheck = $("#contra-check").is(":checked"),
+            		contraValue = "<br /> video = muvs.Soothe_mod(sharp, denoise, keep=25)";
+
+                if (knlmCheck && contraCheck) {
+                	$("#knlm").removeAttr("readonly disabled");
+                	knlmOutput = knlmValue2;
+                	knlmOutput += contraValue;
+                	document.getElementById("knlmOutput").append();
+                	document.getElementById("contraOutput").append();
+                    document.getElementById("vcoutput").style.display = "block";
+                } else if (knlmCheck) {                	
+                	$("#knlm").removeAttr("readonly disabled");
+                	knlmOutput = knlmValue;
+                	document.getElementById("knlmOutput").append();
+                    document.getElementById("vcoutput").style.display = "none";
+                } else {
+                	$("#knlm").attr({ disabled: true, readonly: true });
+                	$("#knlmOutput").empty();
+                	$("#contraOutput").empty();
+                }
+
+                $("#knlmOutput").html(knlmOutput);
+            },
+
+            blind: function () {
+                var bmOutput,
+                    bm = $("#bm").val(),
+                    bmCheck = $("#bm-check").is(":checked"),
+                    bmValue = "video = mvs.BM3D(video, sigma=" + bm + ", radius1=1, profile1=&quot;fast&quot;, matrix=&quot;709&quot;)",
+                    bmValue2 = "denoise = mvs.BM3D(video, sigma=" + bm + ", radius1=1, profile1=&quot;fast&quot;, matrix=&quot;709&quot;)",
+                    contraOutput,
+            		contraCheck = $("#contra-check").is(":checked"),
+            		contraValue = "<br /> video = muvs.Soothe_mod(sharp, denoise, keep=25)";
+
+                if (bmCheck && contraCheck) {
+                    $("#bm").removeAttr("readonly disabled");
+                    bmOutput = bmValue2;
+                    bmOutput += contraValue;
+                    document.getElementById("bmOutput").append()
+                    document.getElementById("contraOutput").append();
+                    document.getElementById("vcoutput").style.display = "block";
+                    //document.getElementById("knlmOutput").style.visibility = "visible";
+                } else if (bmCheck) {
+                    $("#bm").removeAttr("readonly disabled");
+                	bmOutput = bmValue;
+                	document.getElementById("bmOutput").append();
+                    document.getElementById("vcoutput").style.display = "none";
+                    //document.getElementById("knlmOutput").style.visibility = "hidden";
+                } else {
+                	$("#bm").attr({ disabled: true, readonly: true });
+                	$("#bmOutput").empty();
+                	$("#contraOutput").empty();
+                }
+
+                $("#bmOutput").html(bmOutput);
+            },
+
+            test: function () {
+                var dftOutput,
+                    dft = $("#dft").val(),
+                    dftCheck = $("#dft-check").is(":checked"),
+                    dftValue = "video = core.vd.VagueDenoiser(video, threshold=" + dft + ")",
+                    dftValue2 = "video2 = core.vd.VagueDenoiser(video, threshold=" + dft + ")",
+                    contraOutput,
+            		contraCheck = $("#contra-check").is(":checked"),
+            		contraValue = "<br /> video = haf.ContraSharpening(denoised=video2, original=video)";;
+
+                if (dftCheck && contraCheck) {
+                    $("#dft").removeAttr("readonly disabled");
+                    dftOutput = dftValue2;
+                    dftOutput += contraValue;
+                    document.getElementById("dftOutput").append()
+                    document.getElementById("contraOutput").append();
+                    //document.getElementById("dftOutput").style.visibility = "visible";
+                } else if (dftCheck) {
+                	$("#dft").removeAttr("readonly disabled");
+                	dftOutput = dftValue;
+                	document.getElementById("dftOutput").append();
+                } else {
+                    $("#dft").attr({ disabled: true, readonly: true });
+                    $("#dftOutput").empty();
+                    $("#contraOutput").empty();
+                    //document.getElementById("dftOutput").style.visibility = "hidden";
+                }
+
+                $("#dftOutput").html(dftOutput);
+            },
+
+            resizer: function (dimensions) {
+                var resizerOutput,
+                    resizer = $("#resizer").val(),
+                    sharpenCheck = $("#sharpen-check").is(":checked"),
+                    sharpenValue = "a1=" + $("#sharpen").val() + ",a2=0.20)";
+
+                if (!dimensions) {
+                    dimensions = target.width() + "," + target.height();
+                }
+
+                if (sharpenCheck) {
+                  $("#sharpen").removeAttr("readonly disabled");
+                  switch(resizer) {
+                    case "resamplehq":
+                      resizerOutput = "video = core.fmtc.resample(video, css=&quot;444&quot;)<br/>video = descale.Despline36(video, " + dimensions + ")";
+                      resizerOutput += sharpenValue;
+                      break;
+                    case "debilinear":
+                      resizerOutput = "video = core.fmtc.resample(video, css=&quot;444&quot;)<br/>video = descale.Debilinear(video, " + dimensions + ")";
+                      break;
+                    case "dithertools":
+                      resizerOutput = "dither_convert_8_to_16().dither_resize16(" + dimensions + ",kernel=&quot;bilinear&quot;,invks=true).ditherpost(mode=7)";
+                      resizerOutput += sharpenValue;
+                      resizerOutput += "<br /> resamplehq(srcmatrix=&quot;TV.709&quot;,dstcolorspace=&quot;RGB32&quot;)";
+                      break;
+                  }
+                } else {
+                  $("#sharpen").attr({ disabled: true, readonly: true });
+                  switch(resizer) {
+                    case "resamplehq":
+                      resizerOutput = "video = core.fmtc.resample(video, css=&quot;444&quot;)<br/>video = descale.Despline36(video, " + dimensions + ")";
+                      break;
+                    case "debilinear":
+                      resizerOutput = "video = core.fmtc.resample(video, css=&quot;444&quot;)<br/>video = descale.Debilinear(video, " + dimensions + ")";
+                      break;
+                    case "dithertools":
+                      resizerOutput = "c1=dither_convert_yuv_to_rgb(matrix=&quot;709&quot;,output=&quot;rgb48y&quot;).dither_resize16(" + dimensions + ",y=3,u=1,v=1,kernel=&quot;bilinear&quot;,invks=true).ditherpost(mode=7)<br>mergergb(c1.selectevery(3,0),c1.selectevery(3,1),c1.selectevery(3,2))";
+                      break;
+                  }
+                }
+
+                $("#resizerOutput").html(resizerOutput);
+
+            },
+            crop: function () {
+                calculate.offset();
+                $("#cropOutput").html("video = core.std.CropRel(video, left=" + Math.abs(-output.difference.left) + ", top=" + Math.abs(-output.difference.top) + ", right=" + Math.abs(-output.difference.right) + ", bottom=" + Math.abs(-output.difference.bottom) + ")");
+            },
+            update: function (n) {
+                var newValue = n.value;
+                // Error checking, needs more checks for decimals and a more elegant visual html/css solution for the error alert
+                if ($.isNumeric(newValue)) {
+                    if (n.name === "width") {
+                        output.width = Number(newValue);
+                    } else if (n.name === "height") {
+                        output.height = Number(newValue);
+                    }
+                    calculate.refresh();
+                    calculate.mins();
+                } else {
+                    alert("Please input a numerical value");
+                }
+            }
+        };
+        calculate = {
+            canvas: function () {
+                canvas.css({
+                    width: output.width + "px",
+                    height: output.height + "px",
+                    marginTop: "-" + output.height / 2 + "px",
+                    marginLeft: "-" + output.width / 2 + "px"
+                });
+            },
+            mask: function () {
+                $("#topMask, #bottomMask").css({
+                    height: ($(window).height() - output.height) / 2 + "px"
+                });
+
+                $("#rightMask, #leftMask").css({
+                    width: ($(window).width() - output.width) / 2 + "px",
+                    height: output.height + "px",
+                    marginTop: "-" + output.height / 2 + "px"
+                });
+            },
+            offset: function () {
+                output.difference.top = Math.round(target.offset().top - canvas.offset().top);
+                output.difference.right = Math.round(target.offset().left + target.width() - (canvas.offset().left + output.width));
+                output.difference.bottom = Math.round(target.offset().top + target.height() - (canvas.offset().top + output.height));
+                output.difference.left = Math.round(target.offset().left - canvas.offset().left);
+            },
+            containment: function () {
+                output.distance.top = canvas.offset().top - 3;
+                output.distance.right = canvas.offset().left - target.width() + output.width + 2;
+                output.distance.bottom = canvas.offset().top - target.height() + output.height + 1;
+                output.distance.left = canvas.offset().left - 4;
+                parent.draggable("option", "containment", [output.distance.right, output.distance.bottom, output.distance.left, output.distance.top]);
+            },
+            mins: function () {
+                // 4 added to width and height for 2px extra space on all sides
+                target.resizable("option", "minWidth", output.width + 4);
+                target.resizable("option", "minHeight", output.height + 4);
+            },
+            refresh: function () {
+                calculate.canvas();
+                calculate.containment();
+                calculate.mask();
+                output.crop();
+            }
+        };
+
+        target.resizable({
+            aspectRatio: true,
+            alsoResize: subject,
+            resize: function (event, ui) {
+                output.resizer(target.width() + "," + target.height());
+                output.crop();
+                // Stop target from being resized past canvas area, placement needs to be fixed relative to containment boundaries
+                function keepBounded(side) {
+                    switch (side) {
+                    case "both":
+                        parent.css({
+                            top: parent.offset().top - output.difference.bottom + "px",
+                            left: parent.offset().left - output.difference.right + "px"
+                        });
+                        break;
+                    case "bottom":
+                        parent.css("top", parent.offset().top - output.difference.bottom + "px");
+                        break;
+                    case "right":
+                        parent.css("left", parent.offset().left - output.difference.right + "px");
+                        break;
+                    }
+                    output.crop();
+                }
+
+                if (output.difference.bottom < 0 && output.difference.right < 0) {
+                    keepBounded("both");
+                } else if (output.difference.bottom < 0 && output.difference.right > 0) {
+                    keepBounded("bottom");
+                } else if (output.difference.bottom > 0 && output.difference.right < 0) {
+                    keepBounded("right");
+                }
+            },
+            stop: function (event, ui) {
+                // Round width and height values to closest even-number pair
+                if (ratio > 1) {
+                    target.css({
+                        width: 2 * Math.round(((2 * Math.round(target.height() / 2)) * ratio) / 2) + "px",
+                        height: 2 * Math.round(target.height() / 2) + "px"
+                    });
+                    subject.css({
+                        width: 2 * Math.round(((2 * Math.round(target.height() / 2)) * ratio) / 2) + "px",
+                        height: 2 * Math.round(target.height() / 2) + "px"
+                    });
+                }
+                output.resizer(target.width() + "," + target.height());
+                output.crop();
+            }
+        });
+
+        parent.draggable({
+            drag: function (event, ui) {
+                output.crop();
+            }
+        });
+
+
+        subject.on("loadedmetadata", function () {
+            // set video to fit within canvas, added 4 to width/height based on min resize values in calculate.mins
+            ratio = (this.videoWidth / this.videoHeight).toFixed(3);
+            if (ratio > 1) {
+                subject.css({
+                    width: (output.height + 4) * ratio,
+                    height: output.height + 4
+                });
+            } else {
+                subject.css("width", output.width + 4 + "px");
+            }
+            parent.position({
+                my: "center top",
+                at: "center top-3",
+                of: canvas
+            });
+            calculate.containment();
+            calculate.mask();
+            calculate.mins();
+            output.resizer(target.width() + "," + target.height());
+            output.crop();
+        });
+
+        // Update resizer output if sharpen value is changed or disabled/enabled
+        $("#sharpen").change(function() {
+          output.resizer(target.width() + "," + target.height());
+        });
+
+        $("#sharpen-check").change(function() {
+          output.resizer(target.width() + "," + target.height());
+        });
+
+        $("#lsf").change(function() {
+            output.mod();
+        });
+
+        $("#lsf-check").change(function() {
+            output.mod();
+        });
+
+        $("#knlm").change(function() {
+            output.denoise();
+        });
+
+        $("#knlm-check").change(function() {
+            output.denoise();
+        });
+
+        $("#dft").change(function() {
+            output.test();
+        });
+
+        $("#dft-check").change(function() {
+            output.test();
+        });
+
+        $("#bm").change(function() {
+            output.blind();
+        });
+
+        $("#bm-check").change(function() {
+            output.blind();
+        });
+
+        $("#saw-check").change(function() {
+        	output.see();
+        });
+
+        $("#fine").change(function() {
+            output.mod();
+        });
+
+        $("#fine-check").change(function() {
+            output.mod();
+        });
+
+        $("#contra-check").change(function() {
+        	output.denoise();
+        });
+
+        // Keep masks and target in proper position during window resize
+        $(window).resize(function () {
+            calculate.mask();
+            parent.position({
+                my: "left" + output.difference.left + " top" + output.difference.top,
+                at: "left top",
+                of: canvas
+            });
+            calculate.containment();
+        });
+
+        output.processor();
+
+        calculate.canvas();
+
+        // Opacity slider, needs to be fixed to accept manual input
+        $("#opacity-slider").slider({
+            range: "min",
+            min: 0,
+            max: 100,
+            value: 98,
+            slide: function (event, ui) {
+                $("#opacity").val(ui.value);
+                $(".mask").css("opacity", ui.value / 100);
+            }
+        });
+
+        $("#opacity").val($("#opacity-slider").slider("value"));
+
+            $('#output').each(function(){
+                this.contentEditable = true;
+            });
+    </script>
+    <script type="text/javascript">
+    	$(document).ready(function() {
+    		$(this).tooltip();
+    	});
+    </script>
+</body>
+</html>
