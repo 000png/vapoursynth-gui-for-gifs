@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QPlainTextEdit, QHBoxLayout, QLabel, QComboBox, \
     QMessageBox
 
-from lib.utils.pyqt_utils import generateMessageBox
+from lib.utils.pyqt_utils import generateMessageBox, generateTextEntry
 
 ARG_MAX_WIDTH = 40
 ARG_MAX_HEIGHT = 25
@@ -38,17 +38,11 @@ class OptionsBase(QWidget):
             return
 
         for item in fields:
-            self._argPlainTextWidgets[item] = QPlainTextEdit(str(self.args[item]))
-
-        for key, value in self._argPlainTextWidgets.items():
-            value.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            value.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            value.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
-
+            self._argPlainTextWidgets[item] = generateTextEntry(str(self.args[item]))
             if maxWidth is not None:
-                value.setMaximumWidth(maxWidth)
+                self._argPlainTextWidgets[item].setMaximumWidth(maxWidth)
             if maxHeight is not None:
-                value.setMaximumHeight(maxHeight)
+                self._argPlainTextWidgets[item].setMaximumHeight(maxHeight)
 
     def _generateHBoxLayout(self, addStretch=False, abbreviate=False):
         """ Generate generate plain text args layout """
@@ -96,5 +90,7 @@ class OptionsBase(QWidget):
                                             windowTitle="Invalid argument", buttons=QMessageBox.Ok)
                 msgBox.exec()
                 return False
+
+            self.args[key] = result
 
         return True

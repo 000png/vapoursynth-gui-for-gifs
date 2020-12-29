@@ -3,7 +3,8 @@
 General widget utils shared by everything
 """
 from datetime import datetime
-from PyQt5.QtWidgets import QMessageBox, QHBoxLayout, QLabel, QWidget, QStackedLayout
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QMessageBox, QHBoxLayout, QLabel, QWidget, QStackedLayout, QPlainTextEdit
 
 def generateMessageBox(message, icon=QMessageBox.Information, windowTitle="Info",
                        buttons=QMessageBox.Ok):
@@ -45,6 +46,7 @@ def clearAndSetText(textWidget, text, clear=True, setTimestamp=False):
         textWidget.clear()
 
     textWidget.insertPlainText(f"{text}\n\n")
+    textWidget.verticalScrollBar().setValue(textWidget.verticalScrollBar().maximum());
 
 
 def generateStackedWidget(widgets, maxWidth=None, maxHeight=None):
@@ -63,3 +65,13 @@ def generateStackedWidget(widgets, maxWidth=None, maxHeight=None):
         w.setMaximumHeight(maxHeight)
 
     return w, stack
+
+
+def generateTextEntry(text=''):
+    """ Generate text box with presets """
+    tb = QPlainTextEdit(text)
+    tb.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    tb.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    tb.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+
+    return tb

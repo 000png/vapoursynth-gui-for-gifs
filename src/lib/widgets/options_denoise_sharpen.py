@@ -2,10 +2,11 @@
 """
 Denoise and sharpen options.
 """
-from PyQt5.QtWidgets import QLabel
+from PyQt5.QtWidgets import QLabel, QMessageBox
 
 from lib.utils.vs_constants import DENOISE_CONFIG, SHARPEN_CONFIG
 from lib.widgets.options_base import OptionsBase
+from lib.utils.pyqt_utils import generateMessageBox
 
 
 class DenoiseOptionKNLM(OptionsBase):
@@ -83,4 +84,12 @@ class FineSharpOptions(OptionsBase):
 
     def save(self, ignoreErrors=False):
         """ Set and validate text args """
-        return super().save(ignoreErrors=ignoreErrors, floatArgs=['sstr'])
+        result = super().save(ignoreErrors=ignoreErrors, floatArgs=['sstr'])
+        if result:
+            if self.args['sstr'] > 255:
+                msgBox = generateMessageBox(f"{self._optionName} sstr arg cannot be greater than 255", icon=QMessageBox.Critical,
+                                            windowTitle="Invalid argument", buttons=QMessageBox.Ok)
+                msgBox.exec()
+                return False
+
+        return result

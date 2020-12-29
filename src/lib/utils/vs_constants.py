@@ -6,7 +6,7 @@ Constants file for VapourSynth
 # available output render formats
 OUTPUT_FORMATS = {
     '.mov': 'MOV File',
-    '.mp4': 'MP4 File',
+    '.mp4': 'MP4 File (Lossless)',
     '.png': 'PNG Sequence'
 }
 
