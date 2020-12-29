@@ -3,6 +3,13 @@
 Constants file for VapourSynth
 """
 
+# available output render formats
+OUTPUT_FORMATS = {
+    '.mov': 'MOV File',
+    '.mp4': 'MP4 File',
+    '.png': 'PNG Sequence'
+}
+
 PREPROCESSOR_PLUGINS = {
     'haf': 'import havsfunc as haf'
 }

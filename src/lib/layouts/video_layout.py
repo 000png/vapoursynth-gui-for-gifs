@@ -9,14 +9,11 @@ from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QPainter, QBrush, QColor, QPen, QPalette
 
-from lib.widgets.resizable_rubber_band import ResizableRubberBand
-
 class DualVideoLayout(QGridLayout):
 
     def __init__(self, parent=None):
         super().__init__()
         self._parent = parent
-        self._cropToggled = False
         self._buttons = []
 
         self._generateWidgets()
@@ -43,14 +40,9 @@ class DualVideoLayout(QGridLayout):
         self._slider.setTickPosition(QSlider.TicksBothSides)
         self._slider.sliderMoved.connect(self._setPosition)
 
-        # sync slider/cropping with first video
-        self._container = QWidget()
-        self._originalVideoLayout = VideoLayout(parent=self._container, slider=self._slider)
-        self._originalVideoLayout.setContentsMargins(0, 0, 0, 0)
+        # sync slider with first video
+        self._originalVideoLayout = VideoLayout(slider=self._slider)
         self._previewVideoLayout = VideoLayout()
-
-        self._cropRectangle = ResizableRubberBand(parent=self._container)
-        self._cropRectangle.setVisible(self._cropToggled)
 
     def _generateLayout(self):
         """ Generate layout """
@@ -60,7 +52,7 @@ class DualVideoLayout(QGridLayout):
         controlPanel.addWidget(self._playButton)
         controlPanel.addWidget(self._slider)
 
-        self.addWidget(self._container, 0, 0)
+        self.addLayout(self._originalVideoLayout, 0, 0)
         self.addLayout(self._previewVideoLayout, 0, 1)
         self.addLayout(controlPanel, 1, 0, 1, 0)
 

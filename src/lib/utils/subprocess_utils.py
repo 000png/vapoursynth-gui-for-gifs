@@ -9,7 +9,7 @@ import vapoursynth as vs
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 BIN_DIR = os.path.join(SCRIPT_DIR, '../../bin')
 
-def checkScript(filename):
+def checkVSScript(filename):
     """ Verify given script is valid """
     cmd = f"{os.path.join(BIN_DIR, 'VSPipe.exe')} --info {filename} -"
     returnCode, out, err = runSubprocess(cmd)
@@ -21,6 +21,9 @@ def checkScript(filename):
     results = '\n'.join(out.decode('utf-8').splitlines())
     return True, f"Script validated! Here's the video output information:\n\n{results}"
 
+
+def renderVSVideo(filename, extension):
+    pass
 
 def runSubprocess(cmd, errorMsg=None, withShell=False):
     """ Run external process """

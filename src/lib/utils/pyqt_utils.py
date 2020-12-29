@@ -17,19 +17,26 @@ def generateMessageBox(message, icon=QMessageBox.Information, windowTitle="Info"
     return msgBox
 
 
-def generateRow(label, widget):
+def generateRow(label, widgets, setZeroMargins=True):
     """ Generate horizontal layout composed of two widgets """
     if isinstance(label, str):
         label = QLabel(label)
     
     layout = QHBoxLayout()
     layout.addWidget(label)
-    layout.addWidget(widget)
+
+    if not isinstance(widgets, list):
+        widgets = [widgets]
+    for item in widgets:
+        layout.addWidget(item)
+
+    if setZeroMargins:
+        layout.setContentsMargins(0, 0, 0, 0)
 
     return layout
 
 
-def clearAndSetText(textWidget, text, clear=False, setTimestamp=True):
+def clearAndSetText(textWidget, text, clear=True, setTimestamp=False):
     """ Clear and set text widget """
     if setTimestamp:
         text = f"{datetime.now().time()} {text}"
