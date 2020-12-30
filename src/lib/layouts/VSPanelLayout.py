@@ -4,9 +4,8 @@ Layout containing options for Vapoursynth
 """
 import os
 import re
-import json
 import posixpath
-from PyQt5.QtCore import Qt, QProcess
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QComboBox, \
     QLabel, QHBoxLayout, QVBoxLayout, QMessageBox, QPlainTextEdit, QFileDialog, \
     QStackedLayout, QStyle
@@ -16,6 +15,7 @@ import lib.utils.VSConstants as c
 from lib.utils.SubprocessUtils import checkVSScript, renderVSVideo, trimVideo, TRIMMED_FILENAME
 from lib.widgets.OptionsDenoiseSharpen import DenoiseOptionKNLM, DenoiseOptionBM3D, FineSharpOptions
 from lib.layouts.ResizeCropWindow import ResizeCropWindow
+from lib.helpers.SubprocessManager import SubprocessManager
 
 CWD = os.getcwd()
 SCRIPT_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__))).replace(os.sep, posixpath.sep)
@@ -48,33 +48,43 @@ class VSPanelLayout(QVBoxLayout):
         self._generateWidgets()
         self._generateLayout()
 
+    def setSubprocessManager(self, loadingScreen):
+        self._subprocessManager = SubprocessManager(loadingScreen, self._outputTerminal)
+
     def _generateVapourSynthOptions(self):
         """ Generate VapourSynth options """
         # preprocessing
-        self._preprocessor = QComboBox()
+        preprocessor = QComboBox()
         for item in c.PREPROCESSOR_CONFIG.keys():
-            self._preprocessor.addItem(item)
-        self._preprocessor.activated[str].connect(
+            preprocessor.addItem(item)
+        preprocessor.activated[str].connect(
             lambda text: self._addVapourSynthOption(text, 'preprocessor', c.PREPROCESSOR_PLUGINS, c.PREPROCESSOR_CONFIG))
+        preprocessor.setCurrentIndex(1)
 
         # denoising
-        self._denoiseFilters = QComboBox()
+        denoise = QComboBox()
         for item in c.DENOISE_CONFIG.keys():
-            self._denoiseFilters.addItem(item)
-        self._denoiseFilters.activated[str].connect(
+            denoise.addItem(item)
+        denoise.activated[str].connect(
             lambda text: self._addVapourSynthOption(text, 'denoise', c.DENOISE_PLUGINS, c.DENOISE_CONFIG, self._setDenoiseLayout))
 
         self._knlmOptions = DenoiseOptionKNLM()
         self._bm3dOptions = DenoiseOptionBM3D()
 
         # sharpening
-        self._sharpenFilters = QComboBox()
+        sharpen = QComboBox()
         for item in c.SHARPEN_CONFIG.keys():
-            self._sharpenFilters.addItem(item)
-        self._sharpenFilters.activated[str].connect(
+            sharpen.addItem(item)
+        sharpen.activated[str].connect(
             lambda text: self._addVapourSynthOption(text, 'sharpen', c.SHARPEN_PLUGINS, c.SHARPEN_CONFIG, self._setSharpenLayout))
 
         self._fineSharpOptions = FineSharpOptions()
+
+        self._dropdowns = {
+            'preprocessor': preprocessor,
+            'denoise': denoise,
+            'sharpen': sharpen
+        }
 
     def _addVapourSynthOption(self, text, key, vsPlugin, vsConfig, otherFuncToExecute=None):
         """ Add vapoursynth option data """
@@ -94,18 +104,18 @@ class VSPanelLayout(QVBoxLayout):
         self._knlmOptions.save(ignoreErrors=True)
         self._bm3dOptions.save(ignoreErrors=True)
         if text == 'None':
-            self._denoise.hide()
+            self._denoiseOptions.hide()
         else:
-            self._denoise.show()
-            self._denoiseStack.setCurrentWidget(self._knlmOptions) if text == 'KNLM' \
-                else self._denoiseStack.setCurrentWidget(self._bm3dOptions)
+            self._denoiseOptions.show()
+            self._stacks['denoise'].setCurrentWidget(self._knlmOptions) if text == 'KNLM' \
+                else self._stacks['denoise'].setCurrentWidget(self._bm3dOptions)
 
     def _setSharpenLayout(self, text):
         self._fineSharpOptions.save(ignoreErrors=True)
         if text == 'None':
-            self._sharpen.hide()
+            self._sharpenOptions.hide()
         else:
-            self._sharpen.show()
+            self._sharpenOptions.show()
 
     def _openOutputFileDialogue(self):
         """ Open file dialogue """
@@ -166,51 +176,33 @@ class VSPanelLayout(QVBoxLayout):
 
         self.addWidget(self._resizeCropButton)
         self.addWidget(self._resizeCropText)
-        self.addLayout(utils.generateRow("Preprocessor:", self._preprocessor))
+        self.addLayout(utils.generateRow("Preprocessor:", self._dropdowns['preprocessor']))
 
         # stack denoise options
-        self.addLayout(utils.generateRow('Denoise', self._denoiseFilters))
-        self._denoise, self._denoiseStack = utils.generateStackedWidget(
+        self.addLayout(utils.generateRow('Denoise', self._dropdowns['denoise']))
+        self._denoiseOptions, denoiseStack = utils.generateStackedWidget(
             [self._knlmOptions, self._bm3dOptions], PANEL_WIDTH, ROW_HEIGHT)
-        self.addWidget(self._denoise)
-        self._denoise.hide()
+        self.addWidget(self._denoiseOptions)
+        self._denoiseOptions.hide()
 
         # stack sharpen options
-        self.addLayout(utils.generateRow("Sharpen", self._sharpenFilters))
-        self._sharpen, self._sharpenStack = utils.generateStackedWidget(
+        self.addLayout(utils.generateRow("Sharpen", self._dropdowns['sharpen']))
+        self._sharpenOptions, sharpenStack = utils.generateStackedWidget(
             [self._fineSharpOptions], PANEL_WIDTH, ROW_HEIGHT)
-        self.addWidget(self._sharpen)
-        self._sharpen.hide()
+        self.addWidget(self._sharpenOptions)
+        self._sharpenOptions.hide()
 
-        self.addLayout(utils.generateRow(self._generateScriptButton, self._checkVSScriptButton))
+        self._stacks = {
+            'denoise': denoiseStack,
+            'sharpen': sharpenStack
+        }
+
+        self.addLayout(utils.generateRow(self._checkVSScriptButton, self._generateScriptButton))
         self.addLayout(utils.generateRow(self._renderButton, self._renderAutoButton))
         self.addWidget(self._outputTerminal)
 
-    def _setSubprocess(self, cmd, onFinish, nextCmd=None):
-        if onFinish is None and nextCmd is None:
-            raise ValueError("Need either onFinish or nextCmd")
-
-        self._parent.loadingScreen.show()
-        self.p = QProcess()
-
-        if not onFinish:
-            self.p.finished.connect(lambda: self._setSubprocess(**nextCmd))
-        else:
-            self.p.finished.connect(onFinish)
-        self.p.readyReadStandardError.connect(self._onReadyReadStandardError)
-        utils.clearAndSetText(self._outputTerminal, f"EXECUTING CMD:\n{cmd}", clear=False, setTimestamp=True)
-        self.p.start(cmd)
-
-    def _getFinishedSubprocessResults(self):
-        return self.p.exitCode(), self.p.readAllStandardOutput().data().decode(), self.p.readAllStandardError().data().decode()
-
-    def _onReadyReadStandardError(self):
-        error = self.p.readAllStandardError().data().decode()
-        utils.clearAndSetText(self._outputTerminal, error, clear=False, setTimestamp=True)
-
     def _finishedOpenCropWindow(self):
-        self._parent.loadingScreen.hide()
-        result, out, err = self._getFinishedSubprocessResults()
+        result, out, err = self._subprocessManager.getFinishedSubprocessResults()
         if result == 0:
             self._resizeWindow = ResizeCropWindow(self._parent)
             self._resizeWindow.show()
@@ -225,14 +217,13 @@ class VSPanelLayout(QVBoxLayout):
         start = self._trimStart.toPlainText().strip()
         end = self._trimEnd.toPlainText().strip()
 
-        self._setSubprocess(trimVideo(self._data['video']['filename'], start, end,
-                                      trimFilename=os.path.abspath(os.path.join(WORK_DIR, 'resizer.webm')),
-                                      trimArgs="-vcodec libvpx -acodec libvorbis -preset ultrafast"),
-                            self._finishedOpenCropWindow)
+        self._subprocessManager.setSubprocess(trimVideo(self._data['video']['filename'], start, end,
+            trimFilename=os.path.abspath(os.path.join(WORK_DIR, 'resizer.webm')),
+            trimArgs="-vcodec libvpx -acodec libvorbis -preset ultrafast"),
+            self._finishedOpenCropWindow)
 
     def _finishedCheckScriptOkay(self):
-        self._parent.loadingScreen.hide()
-        result, _, _ = self._getFinishedSubprocessResults()
+        result, _, _ = self._subprocessManager.getFinishedSubprocessResults()
         if result != 0:
             msgBox = utils.generateMessageBox(message="Script was invalid, check terminal output for logs",
                                               windowTitle="Hold on!", icon=QMessageBox.Warning,
@@ -241,12 +232,8 @@ class VSPanelLayout(QVBoxLayout):
 
     def _checkScriptOkay(self):
         """ Check script is valid """
-        regenerateScript = self._scriptEditor.toPlainText() == ""
-        if regenerateScript:
-            utils.clearAndSetText(self._outputTerminal, "No script set, auto generating script", clear=False, setTimestamp=True)
-
-        if self.scriptToFile(TMP_VS_SCRIPT, regenerateScript=regenerateScript):
-            self._setSubprocess(checkVSScript(TMP_VS_SCRIPT), self._finishedCheckScriptOkay)
+        if self.scriptToFile(TMP_VS_SCRIPT, regenerateScript=self._scriptEditor.toPlainText() == ""):
+            self._subprocessManager.setSubprocess(checkVSScript(TMP_VS_SCRIPT), self._finishedCheckScriptOkay)
 
     def _generateScript(self):
         """ Generate script and fill the editor box """
@@ -299,8 +286,7 @@ class VSPanelLayout(QVBoxLayout):
             utils.clearAndSetText(self._outputTerminal, f"Script saved to {filename}", clear=False, setTimestamp=True)
 
     def _finishedRender(self):
-        self._parent.loadingScreen.hide()
-        result, out, err = self._getFinishedSubprocessResults()
+        result, out, err = self._subprocessManager.getFinishedSubprocessResults()
         #utils.clearAndSetText(self._outputTerminal, f'Command: {cmd}', clear=False, setTimestamp=True)
         utils.clearAndSetText(self._outputTerminal, err, clear=False, setTimestamp=True)
 
@@ -330,18 +316,21 @@ class VSPanelLayout(QVBoxLayout):
             start = self._trimStart.toPlainText().strip()
             end = self._trimEnd.toPlainText().strip()
             cmds = renderVSVideo(TMP_VS_SCRIPT, self._data['video']['filename'], fullFilePath, extension, start, end)
-            self._setSubprocess(cmds[0], None, nextCmd={'cmd': cmds[1], 'onFinish': self._finishedRender})
+            self._subprocessManager.setSubprocess(cmds[0], None, nextCmd={'cmd': cmds[1], 'onFinish': self._finishedRender})
         else:
             utils.clearAndSetText(self._outputTerminal, f'Failed to render video; make sure script is correct', clear=False, setTimestamp=True)
 
-    def _checkCanSaveOption(self, key, pWidget, stack, filterWidget, ignoreErrors):
+    def _checkCanSaveOption(self, key, pWidget, ignoreErrors):
         """ Check if the option can be saved """
+        stack = self._stacks[key]
+        dropdown = self._dropdowns[key]
+
         if pWidget.isVisible():
             curWidget = stack.currentWidget()
             if not curWidget.save(ignoreErrors=ignoreErrors):
                 return False
 
-            self._data[key]['type'] = str(filterWidget.currentText())
+            self._data[key]['type'] = str(dropdown.currentText())
             self._data[key]['args'] = curWidget.args
         else:
             self._data[key] = None
@@ -362,12 +351,12 @@ class VSPanelLayout(QVBoxLayout):
 
         if 'descale.' not in orgData:
             self._data['descale'] = None
-            self._data['plugins'].pop('descale')
+            self._data['plugins'].pop('descale', None)
         if 'core.std.CropRel' not in orgData:
             self._data['crop'] = None
 
-        return self._checkCanSaveOption('denoise', self._denoise, self._denoiseStack, self._denoiseFilters, ignoreErrors) and \
-            self._checkCanSaveOption('sharpen', self._sharpen, self._sharpenStack, self._sharpenFilters, ignoreErrors)
+        return self._checkCanSaveOption('denoise', self._denoiseOptions, ignoreErrors) and \
+            self._checkCanSaveOption('sharpen', self._sharpenOptions, ignoreErrors)
 
     def clearTerminal(self):
         """ Clear script output terminal """
@@ -392,3 +381,9 @@ class VSPanelLayout(QVBoxLayout):
             return False
 
         return self._scriptEditor.toScript(self._data)
+
+    def repopulateFields(self, newData=None):
+        """ Update data object """
+        if newData:
+            self._data.update(newData)
+

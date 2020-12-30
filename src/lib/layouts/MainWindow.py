@@ -49,8 +49,9 @@ class MainWindow(QMainWindow):
 
         wid.setLayout(layout)
 
-        self.loadingScreen = WaitingSpinnerOverlay(self.centralWidget())
-        self.loadingScreen.hide()
+        self._loadingScreen = WaitingSpinnerOverlay(self.centralWidget())
+        self._loadingScreen.hide()
+        self._vsPanelLayout.setSubprocessManager(self._loadingScreen)
 
     def _generateActions(self):
         """ Generate actions """
@@ -150,5 +151,5 @@ class MainWindow(QMainWindow):
             self._videoLayout.loadVideoFile(filename, videoType='render')
 
     def resizeEvent(self, event):
-        self.loadingScreen.resize(event.size())
+        self._loadingScreen.resize(event.size())
         event.accept()

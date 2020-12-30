@@ -1,0 +1,31 @@
+{
+    "plugins": {
+        "haf": "import havsfunc as haf",
+        "descale": "import descale as descale",
+        "mvs": "import mvsfunc as mvs",
+        "fun": "import G41Fun as fun"
+    },
+    
+    "preprocessor": {
+        "type": "QTGMC 30 fast",
+        "args": "Preset=\"Fast\", FPSDivisor=2"
+    },
+
+    "denoise": {
+        "type": "KNLM",
+        "args": {
+            "d": 0,
+            "a": 6,
+            "s": 4,
+            "h": 1.2,
+            "channels": "YUV"       
+        }
+    },
+
+    "sharpen": {
+        "type": "FineSharp",
+        "args": {
+            "sstr": 1.00
+        }
+    }
+}
