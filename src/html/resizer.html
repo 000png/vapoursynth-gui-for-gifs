@@ -407,29 +407,27 @@
                     resizer = $("#resizer").val();
 
                 if (!dimensions) {
-                    dimensions = target.width() + "," + target.height();
+                    dimensions = target.width() + ", " + target.height();
                 }
-
-                resizerOutput = "# Using " + resizer + ", dimensions " + target.width() + " x " + target.height() + "<br/>"
 
                 switch(resizer) {
                   case "debilinear":
-                    resizerOutput += "#video = descale.Debilinear(video, " + dimensions + ")";
+                    resizerOutput = "video = descale.Debilinear(video, " + dimensions + ")";
                     break;
                   case "debicubic":
-                    resizerOutput += "video = descale.Debicubic(video, " + dimensions + ")";
+                    resizerOutput = "video = descale.Debicubic(video, " + dimensions + ")";
                     break;
                   case "delanczos":
-                    resizerOutput += "video = descale.Delanczos(video, " + dimensions + ")";
+                    resizerOutput = "video = descale.Delanczos(video, " + dimensions + ")";
                     break;
                   case "despline16":
-                    resizerOutput += "video = descale.Despline16(video, " + dimensions + ")";
+                    resizerOutput = "video = descale.Despline16(video, " + dimensions + ")";
                     break;
                   case "despline36":
-                    resizerOutput += "video = descale.Despline36(video, " + dimensions + ")";
+                    resizerOutput = "video = descale.Despline36(video, " + dimensions + ")";
                     break;
                   case "despline64":
-                    resizerOutput += "video = descale.Despline64(video, " + dimensions + ")";
+                    resizerOutput = "video = descale.Despline64(video, " + dimensions + ")";
                     break;
                 }
                 $("#resizerOutput").html(resizerOutput);

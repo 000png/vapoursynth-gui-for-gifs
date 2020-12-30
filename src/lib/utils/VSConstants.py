@@ -53,3 +53,7 @@ SHARPEN_CONFIG = {
         'sstr': 0.55
     }
 }
+
+DESCALE_PLUGINS = {
+    'descale': 'import descale as descale'    
+}

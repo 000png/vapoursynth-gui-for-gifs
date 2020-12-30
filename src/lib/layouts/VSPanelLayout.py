@@ -3,8 +3,9 @@
 Layout containing options for Vapoursynth
 """
 import os
-import posixpath
+import re
 import json
+import posixpath
 from PyQt5.QtCore import Qt, QProcess
 from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QComboBox, \
     QLabel, QHBoxLayout, QVBoxLayout, QMessageBox, QPlainTextEdit, QFileDialog, \
@@ -13,7 +14,6 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QComboBox, \
 import lib.utils.PyQtUtils as utils
 import lib.utils.VSConstants as c
 from lib.utils.SubprocessUtils import checkVSScript, renderVSVideo, trimVideo, TRIMMED_FILENAME
-from lib.utils.VSEvaluateOptions import evaluateVapourSynthOptions
 from lib.widgets.OptionsDenoiseSharpen import DenoiseOptionKNLM, DenoiseOptionBM3D, FineSharpOptions
 from lib.layouts.ResizeCropWindow import ResizeCropWindow
 
@@ -127,7 +127,7 @@ class VSPanelLayout(QVBoxLayout):
             item.setMaximumHeight(ROW_HEIGHT / 2)
 
         self._resizeCropButton = QPushButton("Resize And Crop")
-        self._resizeCropButton.clicked.connect(self._openResizeCropWindow)
+        self._resizeCropButton.clicked.connect(self.openResizeCropWindow)
 
         #self._resizeCropText = utils.generateTextEntry("copy & paste output from the resize/crop window here")
         self._resizeCropText = QPlainTextEdit()
@@ -212,10 +212,10 @@ class VSPanelLayout(QVBoxLayout):
         self._parent.loadingScreen.hide()
         result, out, err = self._getFinishedSubprocessResults()
         if result == 0:
-            self._resizeCropButton = ResizeCropWindow(self._parent)
-            self._resizeCropButton.show()
+            self._resizeWindow = ResizeCropWindow(self._parent)
+            self._resizeWindow.show()
 
-    def _openResizeCropWindow(self):
+    def openResizeCropWindow(self):
         """ Open resize crop window """
         if 'video' not in self._data:
             utils.clearAndSetText(self._outputTerminal, "A video must be loaded in order to crop/resize it", clear=False, setTimestamp=True)
@@ -227,18 +227,17 @@ class VSPanelLayout(QVBoxLayout):
 
         self._setSubprocess(trimVideo(self._data['video']['filename'], start, end,
                                       trimFilename=os.path.abspath(os.path.join(WORK_DIR, 'resizer.webm')),
-                                      trimArgs="-vcodec libvpx -acodec libvorbis"),
+                                      trimArgs="-vcodec libvpx -acodec libvorbis -preset ultrafast"),
                             self._finishedOpenCropWindow)
 
     def _finishedCheckScriptOkay(self):
         self._parent.loadingScreen.hide()
-        result, out, err = self._getFinishedSubprocessResults()
-        if result == 0:
-            text = f"Script validated! Here's the output:\n{out}"
-        else:
-            text = f"Script invalid; here's the error:\n{err}"
-
-        utils.clearAndSetText(self._outputTerminal, text, clear=False, setTimestamp=True)
+        result, _, _ = self._getFinishedSubprocessResults()
+        if result != 0:
+            msgBox = utils.generateMessageBox(message="Script was invalid, check terminal output for logs",
+                                              windowTitle="Hold on!", icon=QMessageBox.Warning,
+                                              buttons=(QMessageBox.Ok | QMessageBox.Cancel))
+            canOverwrite = msgBox.exec() == QMessageBox.Ok
 
     def _checkScriptOkay(self):
         """ Check script is valid """
@@ -306,7 +305,7 @@ class VSPanelLayout(QVBoxLayout):
         utils.clearAndSetText(self._outputTerminal, err, clear=False, setTimestamp=True)
 
         if result != 0:
-            msgBox = utils.generateMessageBox(f"Rendering failed; check terminal for logs", icon=QMessageBox.Critical,
+            msgBox = utils.generateMessageBox(f"Rendering failed; check terminal output for logs", icon=QMessageBox.Critical,
                                               windowTitle="Invalid argument", buttons=QMessageBox.Ok)
             msgBox.exec()
         else:
@@ -324,7 +323,7 @@ class VSPanelLayout(QVBoxLayout):
         filename, extension = os.path.splitext(fullFilePath)
         # reformat for png sequence
         if extension == '.png':
-            filename += f"%05d{extension}"
+            filename += f"%%05d{extension}"
             fullFilePath = os.path.join(os.path.dirname(fullFilePath), filename)
 
         if self.scriptToFile(TMP_VS_SCRIPT, regenerateScript=regenerateScript):
@@ -351,6 +350,22 @@ class VSPanelLayout(QVBoxLayout):
 
     def _saveValues(self, ignoreErrors=False):
         """ Save all fields """
+        orgData = self._resizeCropText.toPlainText().strip()
+        resizeData = re.sub(r'\n\s*\n', '\n', orgData)
+        resizeData = resizeData.split('\n')
+        for item in resizeData:
+            if 'descale.' in item:
+                self._data['descale'] = item
+                self._data['plugins'].update(c.DESCALE_PLUGINS)
+            elif 'core.std.CropRel' in item:
+                self._data['crop'] = item
+
+        if 'descale.' not in orgData:
+            self._data['descale'] = None
+            self._data['plugins'].pop('descale')
+        if 'core.std.CropRel' not in orgData:
+            self._data['crop'] = None
+
         return self._checkCanSaveOption('denoise', self._denoise, self._denoiseStack, self._denoiseFilters, ignoreErrors) and \
             self._checkCanSaveOption('sharpen', self._sharpen, self._sharpenStack, self._sharpenFilters, ignoreErrors)
 
@@ -376,29 +391,4 @@ class VSPanelLayout(QVBoxLayout):
         if not self._saveValues():
             return False
 
-        # add stuff that will always be there + plugins
-        videoData = self._data['video']
-        plugins = '\n'.join(self._data['plugins'].values())
-
-        script = f"""#!./bin/python.exe
-import sys
-sys.path.append('../src/bin/scripts64')
-
-import vapoursynth as vs
-{plugins}
-
-core = vs.get_core()
-#core.max_cache_size = 1000 #Use this command to limit the RAM usage (1000 is equivalent to 1GB of RAM)
-
-video = core.lsmas.LWLibavSource(source=r"{videoData['trimmedFilename']}")
-video = core.fmtc.resample(video, css="444")
-"""
-        # add options
-        script += evaluateVapourSynthOptions(self._data)
-
-        # add output information
-        script += f"""
-video = core.fmtc.bitdepth(video, bits=16)
-video.set_output()
-"""     
-        return script
+        return self._scriptEditor.toScript(self._data)

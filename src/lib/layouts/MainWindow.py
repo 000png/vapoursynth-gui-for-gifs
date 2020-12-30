@@ -141,7 +141,7 @@ class MainWindow(QMainWindow):
 
     def _resizeVideo(self):
         """ Open up resize window """
-        msgBox = utils.generateMessageBox()
+        self._vsPanelLayout.openResizeCropWindow()
 
     def setRenderVideo(self, filename):
         """ Set render video """

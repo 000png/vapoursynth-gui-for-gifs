@@ -5,9 +5,11 @@ Evaluate vs options from data
 
 def evaluateVapourSynthOptions(data):
     """ Evaluate VapourSynth options """
-    script = evaluatePreprocessorOptions(data.get('preprocessor', None))
+    script = evaluateDescale(data.get('descale', None))
+    script += evaluatePreprocessorOptions(data.get('preprocessor', None))
     script += evaluateDenoiseOptions(data.get('denoise', None))
     script += evaluateSharpenOptions(data.get('sharpen', None))
+    script += evaluateCrop(data.get('crop', None))
 
     return script
 
@@ -63,3 +65,19 @@ video = fun.FineSharp(video, sstr={args['sstr']})
         raise ValueError(f'Unrecognized sharpen filter {sType}')
 
     return result
+
+
+def evaluateDescale(descale):
+    """ Descale loaded as is """
+    if not descale:
+        return ''
+
+    return '\n' + descale + '\n'
+
+
+def evaluateCrop(crop):
+    """ Crop loaded as is """
+    if not crop:
+        return ''
+
+    return '\n' + crop + '\n'

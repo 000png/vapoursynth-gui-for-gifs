@@ -12,14 +12,20 @@ If you downloaded this repo correctly, there should be a `src/bin` directory whe
 
 * `vsrepogui.json`
 
-All you need to do is extract `resources/python3.8.7.7z` into this directory. This comes with Python 3.8.7, PyQt5 v. 5.15, VapourSynth R52 (portable), and the VSRepo GUI, which we'll need for the next step.
+All you need to do is extract the following archives under `resources` into this directory. 
 
-## 2. Download Plugins
-Next, we may need to install some VapourSynth plugins. I say may because I may have included them in the archive, but I also might not have (happens when things keep moving with development).
+* `python3.8.7.7z` (includes vapoursynth)
+* `pyqt5.15.7z`
+* `ffmpeg`
 
-Either way, you should check that the plugins are installed. Luckily, the VSRepo GUI makes this easy. Go to the `src/bin` directory and run the `VSRepoGUI` application (has a pusheen icon), navigate to the **Full List** tab, and make sure the following are downloaded (download speeds will vary):
+This comes with a couple things, namely Python 3.8.7, PyQt5 v. 5.15, ffmpeg, VapourSynth R52 (portable), and the VSRepo GUI, which we'll need for the next step.
 
-* `descale`
+## 2. Download/Verify Plugins
+Next, we may need to install some VapourSynth plugins. I say may because I may have included them in the archive, but I also might not have (happens when things keep moving with development), so it's good to double check.
+
+Luckily, the VSRepo GUI makes this easy. Go to the `src/bin` directory and run the `VSRepoGUI` application (has a pusheen icon), navigate to the **Full List** tab, and make sure the following are downloaded (download speeds will vary):
+
+* `descale` (the plugin, the script I should have already imported since VSRepo doesn't seem to like doing it)
 * `havsfunc`
 * `lsmas`
 * `muvsfunc`
