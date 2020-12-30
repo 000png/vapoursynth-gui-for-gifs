@@ -14,7 +14,8 @@ from lib.layouts.VideoLayout import DualVideoLayout
 from lib.layouts.ScriptLayout import ScriptLayout
 from lib.layouts.VSPanelLayout import VSPanelLayout
 
-class MainLayout(QMainWindow):
+
+class MainWindow(QMainWindow):
     """
     Main base layout for application
     """
@@ -46,8 +47,6 @@ class MainLayout(QMainWindow):
         layout.addLayout(self._vsPanelLayout, 0, 1, 0, 1)
 
         wid.setLayout(layout)
-
-        # resizer/crop layout is actually in new window
 
     def _generateActions(self):
         """ Generate actions """

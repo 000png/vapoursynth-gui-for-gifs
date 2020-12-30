@@ -28,13 +28,17 @@
       Suggest things/ask me stuff:
         http://brandinator.sexy
         http://ask.brandinator.sexy
+
+    Modified by zero (000png) on Dec. 29, 2020 to adjust to my GUI needs.
+    Didn't touch much else because quite frankly I have no idea what it means and I just
+    broke stuff when I tried :D
 -->
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Resizer</title>
+    <title>Resizer and Cropper</title>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/jquery-ui.min.js"></script>
@@ -134,72 +138,6 @@
       height: 18px;
     }
 
-.slider {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 15px;
-    border-radius: 5px;   
-    background: #eeeeee;
-    outline: none;
-    -webkit-transition: .2s;
-    transition: opacity .2s;
-}
-
-.slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 25px;
-    height: 25px;
-    border-radius: 50%; 
-    background: #e3e3e3;
-    cursor: pointer;
-}
-
-.slider::-moz-range-thumb {
-    width: 25px;
-    height: 25px;
-    border-radius: 50%;
-    background: #e3e3e3;
-    cursor: pointer;
-}
-
-.slider2 {
-    -webkit-appearance: none;
-    width: 100px;
-    height: 15px;
-    border-radius: 5px;   
-    background: #eeeeee;
-    outline: none;
-    -webkit-transition: .2s;
-    transition: opacity .2s;
-}
-
-.slider2::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 25px;
-    height: 25px;
-    border-radius: 50%; 
-    background: #e3e3e3;
-    cursor: pointer;
-}
-
-.slider2::-moz-range-thumb {
-    width: 25px;
-    height: 25px;
-    border-radius: 50%;
-    background: #e3e3e3;
-    cursor: pointer;
-}
-
-    input#sharpen {
-      width: 200px;
-    }
-
-    #sharpen-check {
-
-    }
-
     #output {
         word-wrap: break-word;
         margin-top: 10px;
@@ -212,91 +150,6 @@
         background-color: #fff;
         border: 1px solid #ccc;
     }
-
-    input#dft {
-      width: 200px;
-    }
-
-    #dft-check {
-
-    }
-
-    #output {
-        word-wrap: break-word;
-        margin-top: 10px;
-        top: 0;
-        right: 0;
-        position: absolute;
-        padding: 5px;
-        min-width: 400px;
-        color: #000;
-        background-color: #fff;
-        border: 1px solid #ccc;
-    }
-
-    input#knlm {
-      width: 200px;
-    }
-
-    #knlm-check {
-
-    }
-
-    #output {
-        word-wrap: break-word;
-        margin-top: 10px;
-        top: 0;
-        right: 0;
-        position: absolute;
-        padding: 5px;
-        min-width: 400px;
-        color: #000;
-        background-color: #fff;
-        border: 1px solid #ccc;
-    }
-
-    input#bm {
-      width: 200px;
-    }
-
-    #bm-check {
-
-    }
-
-    #output {
-        word-wrap: break-word;
-        margin-top: 10px;
-        top: 0;
-        right: 0;
-        position: absolute;
-        padding: 5px;
-        min-width: 400px;
-        color: #000;
-        background-color: #fff;
-        border: 1px solid #ccc;
-    }
-
-    input#lsf {
-      width: 200px;
-    }
-
-    #lsf-check {
-
-    }
-
-    #output {
-        word-wrap: break-word;
-        margin-top: 10px;
-        top: 0;
-        right: 0;
-        position: absolute;
-        padding: 5px;
-        min-width: 400px;
-        color: #000;
-        background-color: #fff;
-        border: 1px solid #ccc;
-    }
-
 
 </style>
 </head>
@@ -304,7 +157,7 @@
     <div id="container">
         <div id="target">
              <video id="video" autoplay loop muted>
-                <source src="video_cut/cut_resizer.mp4" type="video/mp4">
+                <source src="../../work/resizer.webm" type="video/webm">
             </video>
         </div>
     </div>
@@ -318,78 +171,30 @@
     <div id="canvas"></div>
 
     <div id="settings">
-        <label for="gif-size">GIF Size:</label>
+        <label for="gif-size" title="The gif size, in pixels">GIF Size:</label>
         <input type="number" id="gif-size" step="1" name="width" value="268" class="gif-width" oninput="output.update(this);"> <input type="number" name="height" value="350" class="gif-height" oninput="output.update(this);">
         <br>
-        <label for="opacity">Opacity:</label>
+        <label for="opacity" title="Set the opacity of the video that goes outside the cropping bounds">Opacity:</label>
         <input type="text" id="opacity" value="98" readonly disabled> <div id="opacity-slider"></div>
 
         <form action="">
-            <label for="preprocessor" title="If the source video is interlaced (1080i .ts/.tp/.m2ts file) make sure you choose one of these qtgmc commands. In terms of quality: Slow >> Fast.">Preprocessor:</label>
-            <select id="preprocessor" onchange="output.processor();">
-                <option value="" selected>None</option>
-                <option value="video = haf.QTGMC(video, Preset=&quot;Fast&quot;, TFF=True, FPSDivisor=2)">qtgmc 30 fast</option>
-                <option value="video = haf.QTGMC(video, Preset=&quot;Slower&quot;, TFF=True, FPSDivisor=2)">qtgmc 30 slow</option>
-                <option value="video = haf.QTGMC(video, Preset=&quot;Fast&quot;, TFF=True)">qtgmc 60 fast</option>
-                <option value="video = haf.QTGMC(video, Preset=&quot;Slower&quot;, TFF=True)">qtgmc 60 slow</option>
-            </select>
+            <label for="resizer" title="Descaling method">Scaling:</label>
             <!-- <label for="resizer"></label> -->
             <select id="resizer" onchange="output.resizer();">
                 <option value="debilinear" selected>debilinear</option>
-                <option value="resamplehq" >despline</option>
+                <option value="debicubic">debicubic</option>
+                <option value="delanczos">delanczos</option>
+                <option value="despline16">despline16</option>
+                <option value="despline36">despline36</option>
+                <option value="despline64">despline64</option>
             </select>
 
         </form>
-
-        <form action="">
-        <label for="probando" title="Choose whatever filter you want. Keep in mind that this is completely optional and the results may vary depending on which one you choose. You can ignore this if your plan is to use Topaz Denoise.">Denoise Filters:</label>
-        <select id="probando" onchange="output.prob();">
-        	<option value="uno" selected>None</option>
-        	<option value="dos">KNLM</option>
-        	<option value="tres">BM3D</option>
-        </select>
-    	</form>
-
-        <form id="keinlm" action="" style="display: none;">
-        	<label for="knlm">KNLM:</label>
-        	<input type="range" id="knlm" value="0.01" min="1.20" max="9.99" step=".01" class="slider" oninput="output.denoise();"> <input type="checkbox" id="knlm-check" name="knlm-check">
-        </form>
-        <form id="dift" action="" style="display: none;">
-        	<label for="dft">VagueDenoiser:</label>
-        	<input type="range" id="dft" value="0.01" min="0.01" max="9.99" step=".01" class="slider" oninput="output.test();"> <input type="checkbox" id="dft-check" name="dft-check">
-    	</form>
-        <form id="vamos" style="display: none;">
-        	<label for="bm" title="">BM3D:</label>
-        	<input type="range" id="bm" value="0.01" min="2" max="16" step=".01" class="slider" oninput="output.blind();"> <input type="checkbox" id="bm-check" name="bm-check">
-        </form>
-        <form action="">
-        <label for="probando2">Sharpening:</label>
-        <select id="probando2" onchange="output.prob2();">
-            <option value="uno1" selected>None</option>
-            <option value="dos1">VCFreq</option>
-            <option value="tres1">FineSharp</option>
-        </select>
-        </form>
-        <form id="con" style="display: none;">
-            <label for="contra">VCFreq:</label>
-            <input type="checkbox" id="contra-check" name="contra-check" oninput="output.denoise();output.blind();output.test()">
-        </form>
-        <form id="fine" style="display: none;">
-            <label for="finesharp">FineSharp:</label>
-            <input type="range" id="finesharp" value="0.22" min="0.22" max="12" step=".01" class="slider2" oninput="output.mod();"> <input type="checkbox" id="fine-check" name="fine-check">
-        </form>
+        <br>
     </div>
 
     <div id="output">
-        <p id="preprocesssorOutput"></p>
         <p id="resizerOutput"></p>
-        <p id="vcoutput" style="display:none">sharp = core.vcfreq.Sharp(video, 0, 0.48, 1, 1, 25, 0.28)</p>
-        <p id="knlmOutput"></p>
-        <p id="dftOutput"></p>
-        <p id="bmOutput"></p>
-        <p id="sawOutput"></p>
-        <p id="lsfOutput"></p>
-        <p id="contraOutput"></p>
         <p id="cropOutput"></p>
     </div>
 
@@ -599,47 +404,35 @@
 
             resizer: function (dimensions) {
                 var resizerOutput,
-                    resizer = $("#resizer").val(),
-                    sharpenCheck = $("#sharpen-check").is(":checked"),
-                    sharpenValue = "a1=" + $("#sharpen").val() + ",a2=0.20)";
+                    resizer = $("#resizer").val();
 
                 if (!dimensions) {
                     dimensions = target.width() + "," + target.height();
                 }
 
-                if (sharpenCheck) {
-                  $("#sharpen").removeAttr("readonly disabled");
-                  switch(resizer) {
-                    case "resamplehq":
-                      resizerOutput = "video = core.fmtc.resample(video, css=&quot;444&quot;)<br/>video = descale.Despline36(video, " + dimensions + ")";
-                      resizerOutput += sharpenValue;
-                      break;
-                    case "debilinear":
-                      resizerOutput = "video = core.fmtc.resample(video, css=&quot;444&quot;)<br/>video = descale.Debilinear(video, " + dimensions + ")";
-                      break;
-                    case "dithertools":
-                      resizerOutput = "dither_convert_8_to_16().dither_resize16(" + dimensions + ",kernel=&quot;bilinear&quot;,invks=true).ditherpost(mode=7)";
-                      resizerOutput += sharpenValue;
-                      resizerOutput += "<br /> resamplehq(srcmatrix=&quot;TV.709&quot;,dstcolorspace=&quot;RGB32&quot;)";
-                      break;
-                  }
-                } else {
-                  $("#sharpen").attr({ disabled: true, readonly: true });
-                  switch(resizer) {
-                    case "resamplehq":
-                      resizerOutput = "video = core.fmtc.resample(video, css=&quot;444&quot;)<br/>video = descale.Despline36(video, " + dimensions + ")";
-                      break;
-                    case "debilinear":
-                      resizerOutput = "video = core.fmtc.resample(video, css=&quot;444&quot;)<br/>video = descale.Debilinear(video, " + dimensions + ")";
-                      break;
-                    case "dithertools":
-                      resizerOutput = "c1=dither_convert_yuv_to_rgb(matrix=&quot;709&quot;,output=&quot;rgb48y&quot;).dither_resize16(" + dimensions + ",y=3,u=1,v=1,kernel=&quot;bilinear&quot;,invks=true).ditherpost(mode=7)<br>mergergb(c1.selectevery(3,0),c1.selectevery(3,1),c1.selectevery(3,2))";
-                      break;
-                  }
+                resizerOutput = "# Using " + resizer + ", dimensions " + target.width() + " x " + target.height() + "<br/>"
+
+                switch(resizer) {
+                  case "debilinear":
+                    resizerOutput += "#video = descale.Debilinear(video, " + dimensions + ")";
+                    break;
+                  case "debicubic":
+                    resizerOutput += "video = descale.Debicubic(video, " + dimensions + ")";
+                    break;
+                  case "delanczos":
+                    resizerOutput += "video = descale.Delanczos(video, " + dimensions + ")";
+                    break;
+                  case "despline16":
+                    resizerOutput += "video = descale.Despline16(video, " + dimensions + ")";
+                    break;
+                  case "despline36":
+                    resizerOutput += "video = descale.Despline36(video, " + dimensions + ")";
+                    break;
+                  case "despline64":
+                    resizerOutput += "video = descale.Despline64(video, " + dimensions + ")";
+                    break;
                 }
-
                 $("#resizerOutput").html(resizerOutput);
-
             },
             crop: function () {
                 calculate.offset();

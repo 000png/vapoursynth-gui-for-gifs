@@ -15,7 +15,9 @@ If you downloaded this repo correctly, there should be a `src/bin` directory whe
 All you need to do is extract `resources/python3.8.7.7z` into this directory. This comes with Python 3.8.7, PyQt5 v. 5.15, VapourSynth R52 (portable), and the VSRepo GUI, which we'll need for the next step.
 
 ## 2. Download Plugins
-Next, we need to install some VapourSynth plugins. Luckily, the VSRepo GUI makes this easy. Go to the `src/bin` directory and run the `VSRepoGUI` application (has a pusheen icon), navigate to the **Full List** tab, and download the following (download speeds will vary):
+Next, we may need to install some VapourSynth plugins. I say may because I may have included them in the archive, but I also might not have (happens when things keep moving with development).
+
+Either way, you should check that the plugins are installed. Luckily, the VSRepo GUI makes this easy. Go to the `src/bin` directory and run the `VSRepoGUI` application (has a pusheen icon), navigate to the **Full List** tab, and make sure the following are downloaded (download speeds will vary):
 
 * `descale`
 * `havsfunc`
@@ -23,11 +25,11 @@ Next, we need to install some VapourSynth plugins. Luckily, the VSRepo GUI makes
 * `muvsfunc`
 * `mvmulti`
 
-Feel free to add any other plugins you want to use; that being said, my GUI only supports/generates code for certain features of the above; you'll have to add the VapourSynth code yourself in order to use other plugins and features.
+Feel free to add any other plugins you want to use; that being said, my GUI only directly supports/generates code for certain features of the above; you'll have to add the VapourSynth code yourself in order to use other plugins and features.
 
 ## 3. Additional Downloads
 
-It is likely you will need to install codecs to get the GUI video player to work. If you ran the application manually you'll probably see an error similar to this in the terminal:
+It is likely you will need to install codecs to get the GUI video player to work. If you ran the application manually you'll probably see an error similar to this in the terminal. If you just ran it, I surmise the program will crash when you try to load a video.
 
 ```
 DirectShowPlayerService::doRender: Unresolved error code 0x80040266

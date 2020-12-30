@@ -26,11 +26,12 @@ def checkVSScript(filename):
     return True, f"Script validated! Here's the video output information:\n\n{results}"
 
 
-def trimVideo(filename, start, end, trimFilename=TRIMMED_FILENAME):
+def trimVideo(filename, start, end, trimFilename=TRIMMED_FILENAME, trimArgs="-vcodec libx264 -preset ultrafast -pix_fmt yuv420p"):
     """ Trim video """
-    cmd = f'"{FFMPEG}" -y -ss {start} -t {end} -i "{filename}" -vcodec libx264 -preset ultrafast -pix_fmt yuv420p "{trimFilename}"'
+    cmd = f'"{FFMPEG}" -y -ss {start} -t {end} -i "{filename}" {trimArgs} "{trimFilename}"'
 
     returnCode, out, err = runSubprocess(cmd, withShell=True)
+    print(f"CMD:\n{cmd}\nCODE:\n{returnCode}\nSTDOUT:\n{out.decode('utf-8')}\nSTDERR\n{err.decode('utf-8')}")
     if returnCode != 0:
         return False, cmd, '\n'.join(err.decode('utf-8').splitlines())
 

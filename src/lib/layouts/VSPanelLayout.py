@@ -11,10 +11,11 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QComboBox, \
 
 import lib.utils.PyQtUtils as utils
 import lib.utils.VSConstants as c
-from lib.utils.SubprocessUtils import checkVSScript, renderVSVideo, TRIMMED_FILENAME
+from lib.utils.SubprocessUtils import checkVSScript, renderVSVideo, trimVideo, TRIMMED_FILENAME
 from lib.utils.VSEvaluateOptions import evaluateVapourSynthOptions
 from lib.layouts.ScriptLayout import OPENING_DEFAULT_SCRIPT
 from lib.widgets.OptionsDenoiseSharpen import DenoiseOptionKNLM, DenoiseOptionBM3D, FineSharpOptions
+from lib.layouts.ResizeCropWindow import ResizeCropWindow
 
 CWD = os.getcwd()
 SCRIPT_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
@@ -125,6 +126,14 @@ class VSPanelLayout(QVBoxLayout):
         for item in [self._outputFileText, self._trimStart, self._trimEnd]:
             item.setMaximumHeight(ROW_HEIGHT / 2)
 
+        self._resizeCropButton = QPushButton("Resize And Crop")
+        self._resizeCropButton.clicked.connect(self._openResizeCropWindow)
+
+        #self._resizeCropText = utils.generateTextEntry("copy & paste output from the resize/crop window here")
+        self._resizeCropText = QPlainTextEdit("copy & paste output from the resize/crop window here")
+        self._resizeCropText.setMaximumWidth(PANEL_WIDTH)
+        self._resizeCropText.setMaximumHeight(ROW_HEIGHT)
+
         self._generateScriptButton = QPushButton("Generate Script")
         self._generateScriptButton.clicked.connect(self._generateScript)
 
@@ -154,6 +163,8 @@ class VSPanelLayout(QVBoxLayout):
             item.setMaximumHeight(ROW_HEIGHT / 2)
             self.addWidget(item)
 
+        self.addWidget(self._resizeCropButton)
+        self.addWidget(self._resizeCropText)
         self.addLayout(utils.generateRow("Preprocessor:", self._preprocessor))
 
         # stack denoise options
@@ -174,14 +185,24 @@ class VSPanelLayout(QVBoxLayout):
         self.addLayout(utils.generateRow(self._renderButton, self._renderAutoButton))
         self.addWidget(self._outputTerminal)
 
-    def setVideo(self, filename, duration):
-        """ Set video path """
-        self._data['video'] = {
-            'filename': filename,
-            'trimmedFilename': TRIMMED_FILENAME,
-            'trimStart': 0,
-            'trimEnd': duration
-        }
+    def _openResizeCropWindow(self):
+        """ Open resize crop window """
+        if 'video' not in self._data:
+            utils.clearAndSetText(self._outputTerminal, "A video must be loaded in order to crop/resize it", clear=False, setTimestamp=True)
+            return
+
+        # trim input video
+        start = self._trimStart.toPlainText().strip()
+        end = self._trimEnd.toPlainText().strip()
+        result, cmd, error = trimVideo(self._data['video']['filename'], start, end, trimFilename=os.path.abspath(os.path.join(WORK_DIR, 'resizer.webm')),
+                                       trimArgs="-vcodec libvpx -acodec libvorbis")
+        
+        if not result:
+            out = f"CMD:\n\n{cmd}\n\nCODE:\n\n{result}\n\nSTDERR\n\n{error}"
+            utils.clearAndSetText(self._outputTerminal, f"TRIM FAILED: Here is the output\n\n{out}", clear=False, setTimestamp=True)
+        else:
+            self._resizeCropButton = ResizeCropWindow(self._parent)
+            self._resizeCropButton.show()
 
     def _generateScript(self):
         """ Generate script and fill the editor box """
@@ -295,6 +316,15 @@ class VSPanelLayout(QVBoxLayout):
     def clearTerminal(self):
         """ Clear script output terminal """
         self._outputTerminal.clear()
+
+    def setVideo(self, filename, duration):
+        """ Set video path """
+        self._data['video'] = {
+            'filename': filename,
+            'trimmedFilename': TRIMMED_FILENAME,
+            'trimStart': 0,
+            'trimEnd': duration
+        }
 
     def toScript(self):
         """ Convert data to executable python script """
