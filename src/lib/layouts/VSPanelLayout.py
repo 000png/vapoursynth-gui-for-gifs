@@ -3,8 +3,9 @@
 Layout containing options for Vapoursynth
 """
 import os
+import posixpath
 import json
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QProcess
 from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QComboBox, \
     QLabel, QHBoxLayout, QVBoxLayout, QMessageBox, QPlainTextEdit, QFileDialog, \
     QStackedLayout, QStyle
@@ -13,14 +14,13 @@ import lib.utils.PyQtUtils as utils
 import lib.utils.VSConstants as c
 from lib.utils.SubprocessUtils import checkVSScript, renderVSVideo, trimVideo, TRIMMED_FILENAME
 from lib.utils.VSEvaluateOptions import evaluateVapourSynthOptions
-from lib.layouts.ScriptLayout import OPENING_DEFAULT_SCRIPT
 from lib.widgets.OptionsDenoiseSharpen import DenoiseOptionKNLM, DenoiseOptionBM3D, FineSharpOptions
 from lib.layouts.ResizeCropWindow import ResizeCropWindow
 
 CWD = os.getcwd()
-SCRIPT_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-WORK_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..\\..\\..\\work'))
-TMP_VS_SCRIPT = os.path.abspath(os.path.join(WORK_DIR, 'tmp.vpy'))
+SCRIPT_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__))).replace(os.sep, posixpath.sep)
+WORK_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..\\..\\..\\work')).replace(os.sep, posixpath.sep)
+TMP_VS_SCRIPT = os.path.abspath(os.path.join(WORK_DIR, 'tmp.vpy')).replace(os.sep, posixpath.sep)
 
 NO_VIDEO_LOADED_SCRIPT = 'A video must be loaded before the script can be generated and validated'
 
@@ -130,7 +130,8 @@ class VSPanelLayout(QVBoxLayout):
         self._resizeCropButton.clicked.connect(self._openResizeCropWindow)
 
         #self._resizeCropText = utils.generateTextEntry("copy & paste output from the resize/crop window here")
-        self._resizeCropText = QPlainTextEdit("copy & paste output from the resize/crop window here")
+        self._resizeCropText = QPlainTextEdit()
+        self._resizeCropText.setPlaceholderText("copy & paste output from the resize/crop window here")
         self._resizeCropText.setMaximumWidth(PANEL_WIDTH)
         self._resizeCropText.setMaximumHeight(ROW_HEIGHT)
 
@@ -185,6 +186,35 @@ class VSPanelLayout(QVBoxLayout):
         self.addLayout(utils.generateRow(self._renderButton, self._renderAutoButton))
         self.addWidget(self._outputTerminal)
 
+    def _setSubprocess(self, cmd, onFinish, nextCmd=None):
+        if onFinish is None and nextCmd is None:
+            raise ValueError("Need either onFinish or nextCmd")
+
+        self._parent.loadingScreen.show()
+        self.p = QProcess()
+
+        if not onFinish:
+            self.p.finished.connect(lambda: self._setSubprocess(**nextCmd))
+        else:
+            self.p.finished.connect(onFinish)
+        self.p.readyReadStandardError.connect(self._onReadyReadStandardError)
+        utils.clearAndSetText(self._outputTerminal, f"EXECUTING CMD:\n{cmd}", clear=False, setTimestamp=True)
+        self.p.start(cmd)
+
+    def _getFinishedSubprocessResults(self):
+        return self.p.exitCode(), self.p.readAllStandardOutput().data().decode(), self.p.readAllStandardError().data().decode()
+
+    def _onReadyReadStandardError(self):
+        error = self.p.readAllStandardError().data().decode()
+        utils.clearAndSetText(self._outputTerminal, error, clear=False, setTimestamp=True)
+
+    def _finishedOpenCropWindow(self):
+        self._parent.loadingScreen.hide()
+        result, out, err = self._getFinishedSubprocessResults()
+        if result == 0:
+            self._resizeCropButton = ResizeCropWindow(self._parent)
+            self._resizeCropButton.show()
+
     def _openResizeCropWindow(self):
         """ Open resize crop window """
         if 'video' not in self._data:
@@ -194,15 +224,30 @@ class VSPanelLayout(QVBoxLayout):
         # trim input video
         start = self._trimStart.toPlainText().strip()
         end = self._trimEnd.toPlainText().strip()
-        result, cmd, error = trimVideo(self._data['video']['filename'], start, end, trimFilename=os.path.abspath(os.path.join(WORK_DIR, 'resizer.webm')),
-                                       trimArgs="-vcodec libvpx -acodec libvorbis")
-        
-        if not result:
-            out = f"CMD:\n\n{cmd}\n\nCODE:\n\n{result}\n\nSTDERR\n\n{error}"
-            utils.clearAndSetText(self._outputTerminal, f"TRIM FAILED: Here is the output\n\n{out}", clear=False, setTimestamp=True)
+
+        self._setSubprocess(trimVideo(self._data['video']['filename'], start, end,
+                                      trimFilename=os.path.abspath(os.path.join(WORK_DIR, 'resizer.webm')),
+                                      trimArgs="-vcodec libvpx -acodec libvorbis"),
+                            self._finishedOpenCropWindow)
+
+    def _finishedCheckScriptOkay(self):
+        self._parent.loadingScreen.hide()
+        result, out, err = self._getFinishedSubprocessResults()
+        if result == 0:
+            text = f"Script validated! Here's the output:\n{out}"
         else:
-            self._resizeCropButton = ResizeCropWindow(self._parent)
-            self._resizeCropButton.show()
+            text = f"Script invalid; here's the error:\n{err}"
+
+        utils.clearAndSetText(self._outputTerminal, text, clear=False, setTimestamp=True)
+
+    def _checkScriptOkay(self):
+        """ Check script is valid """
+        regenerateScript = self._scriptEditor.toPlainText() == ""
+        if regenerateScript:
+            utils.clearAndSetText(self._outputTerminal, "No script set, auto generating script", clear=False, setTimestamp=True)
+
+        if self.scriptToFile(TMP_VS_SCRIPT, regenerateScript=regenerateScript):
+            self._setSubprocess(checkVSScript(TMP_VS_SCRIPT), self._finishedCheckScriptOkay)
 
     def _generateScript(self):
         """ Generate script and fill the editor box """
@@ -218,7 +263,7 @@ class VSPanelLayout(QVBoxLayout):
             return False
 
         canOverwrite = True
-        if script != old_script and old_script != OPENING_DEFAULT_SCRIPT:
+        if script != old_script and old_script:
             msgBox = utils.generateMessageBox(message="This will override the current script. Continue?",
                                               windowTitle="Hold on!", icon=QMessageBox.Warning,
                                               buttons=(QMessageBox.Ok | QMessageBox.Cancel))
@@ -230,21 +275,11 @@ class VSPanelLayout(QVBoxLayout):
 
         return canOverwrite
 
-    def _checkScriptOkay(self):
-        """ Check script is valid """
-        regenerateScript = self._scriptEditor.toPlainText() == OPENING_DEFAULT_SCRIPT
-        if regenerateScript:
-            utils.clearAndSetText(self._outputTerminal, "No script set, auto generating script", clear=False, setTimestamp=True)
-
-        if self.scriptToFile(TMP_VS_SCRIPT, regenerateScript=regenerateScript):
-            result, text = checkVSScript(TMP_VS_SCRIPT)
-            utils.clearAndSetText(self._outputTerminal, text, clear=False, setTimestamp=True)
-
     def scriptToFile(self, filename=TMP_VS_SCRIPT, regenerateScript=True):
         """ Generate script and save to file  """
         if not regenerateScript or self._generateScript():
             script = self._scriptEditor.toPlainText()
-            if script == OPENING_DEFAULT_SCRIPT:
+            if not script:
                 return False
             with open(filename, 'w') as fh:
                 fh.write(script)
@@ -264,6 +299,20 @@ class VSPanelLayout(QVBoxLayout):
             self.scriptToFile(filename, regenerateScript=False)
             utils.clearAndSetText(self._outputTerminal, f"Script saved to {filename}", clear=False, setTimestamp=True)
 
+    def _finishedRender(self):
+        self._parent.loadingScreen.hide()
+        result, out, err = self._getFinishedSubprocessResults()
+        #utils.clearAndSetText(self._outputTerminal, f'Command: {cmd}', clear=False, setTimestamp=True)
+        utils.clearAndSetText(self._outputTerminal, err, clear=False, setTimestamp=True)
+
+        if result != 0:
+            msgBox = utils.generateMessageBox(f"Rendering failed; check terminal for logs", icon=QMessageBox.Critical,
+                                              windowTitle="Invalid argument", buttons=QMessageBox.Ok)
+            msgBox.exec()
+        else:
+            # set new video in render panel
+            self._parent.setRenderVideo(self._outputFileText.toPlainText().strip())
+
     def renderVideo(self, regenerateScript=True):
         """ Render video """
         if 'video' not in self._data:
@@ -281,16 +330,8 @@ class VSPanelLayout(QVBoxLayout):
         if self.scriptToFile(TMP_VS_SCRIPT, regenerateScript=regenerateScript):
             start = self._trimStart.toPlainText().strip()
             end = self._trimEnd.toPlainText().strip()
-            result, cmd, msg = renderVSVideo(TMP_VS_SCRIPT, self._data['video']['filename'], fullFilePath, extension, start, end)
-            utils.clearAndSetText(self._outputTerminal, f'Command: {cmd}', clear=False, setTimestamp=True)
-            utils.clearAndSetText(self._outputTerminal, msg, clear=False, setTimestamp=True)
-            if not result:
-                msgBox = utils.generateMessageBox(f"Rendering failed; check terminal for logs", icon=QMessageBox.Critical,
-                                                  windowTitle="Invalid argument", buttons=QMessageBox.Ok)
-                msgBox.exec()
-            else:
-                # set new video in render panel
-                self._parent.setRenderVideo(self._outputFileText.toPlainText().strip())
+            cmds = renderVSVideo(TMP_VS_SCRIPT, self._data['video']['filename'], fullFilePath, extension, start, end)
+            self._setSubprocess(cmds[0], None, nextCmd={'cmd': cmds[1], 'onFinish': self._finishedRender})
         else:
             utils.clearAndSetText(self._outputTerminal, f'Failed to render video; make sure script is correct', clear=False, setTimestamp=True)
 

@@ -3,8 +3,8 @@
 * add G41Fun.py to archive
 * add FFmpeg to archive
 * Add PyQtWebEngine to archive
-* resize/cropping reutilize html script
-    * option will still be shown in panel but not editable, have to open window again to change
+* resize/cropping don't have to copy & paste, need to figure out how to communicate between the two
+* loading bars while subprocesses are running
 * presets and save history
     * custom saved JSONs
     * load preset should be in top menu bar

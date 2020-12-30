@@ -13,6 +13,7 @@ import lib.utils.PyQtUtils as utils
 from lib.layouts.VideoLayout import DualVideoLayout
 from lib.layouts.ScriptLayout import ScriptLayout
 from lib.layouts.VSPanelLayout import VSPanelLayout
+from lib.widgets.WaitingSpinnerOverlay import WaitingSpinnerOverlay
 
 
 class MainWindow(QMainWindow):
@@ -47,6 +48,9 @@ class MainWindow(QMainWindow):
         layout.addLayout(self._vsPanelLayout, 0, 1, 0, 1)
 
         wid.setLayout(layout)
+
+        self.loadingScreen = WaitingSpinnerOverlay(self.centralWidget())
+        self.loadingScreen.hide()
 
     def _generateActions(self):
         """ Generate actions """
@@ -144,3 +148,7 @@ class MainWindow(QMainWindow):
         _, extension = os.path.splitext(filename)
         if extension != '.png':
             self._videoLayout.loadVideoFile(filename, videoType='render')
+
+    def resizeEvent(self, event):
+        self.loadingScreen.resize(event.size())
+        event.accept()

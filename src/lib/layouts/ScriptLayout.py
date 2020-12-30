@@ -5,7 +5,6 @@ Layout containing generated script
 from PyQt5.QtWidgets import QGridLayout, QPushButton, QPlainTextEdit, QWidget
 from PyQt5.QtGui import QFont
 
-OPENING_DEFAULT_SCRIPT = 'The generated script will appear here'
 
 class ScriptLayout(QGridLayout):
     def __init__(self, parent=None):
@@ -17,7 +16,8 @@ class ScriptLayout(QGridLayout):
 
     def _generateWidgets(self):
         """ Generate widgets """
-        self.scriptEditor = QPlainTextEdit(OPENING_DEFAULT_SCRIPT)
+        self.scriptEditor = QPlainTextEdit()
+        self.scriptEditor.setPlaceholderText('The generated script will appear here')
         self.scriptEditor.setFont(QFont("Courier", 10))
         self.scriptEditor.setMaximumHeight(250)
 
