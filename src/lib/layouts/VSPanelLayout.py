@@ -17,6 +17,7 @@ from lib.utils.SubprocessUtils import checkVSScript, renderVSVideo, trimVideo, T
 from lib.widgets.OptionsDenoiseSharpen import DenoiseOptionKNLM, DenoiseOptionBM3D, FineSharpOptions
 from lib.layouts.ResizeCropWindow import ResizeCropWindow
 from lib.helpers.SubprocessManager import SubprocessManager
+from lib.helpers.PresetLoader import PresetLoader
 
 CWD = os.getcwd()
 SCRIPT_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__))).replace(os.sep, posixpath.sep)
@@ -48,6 +49,7 @@ class VSPanelLayout(QVBoxLayout):
         self._generateVapourSynthOptions()
         self._generateWidgets()
         self._generateLayout()
+        self._presetLoader = PresetLoader(self)
 
     def setSubprocessManager(self, loadingScreen):
         self._subprocessManager = SubprocessManager(loadingScreen, self._outputTerminal)
@@ -382,14 +384,29 @@ class VSPanelLayout(QVBoxLayout):
 
         return self._scriptEditor.toScript(self._data)
 
-    def repopulateFields(self, newData=None):
+    def repopulateFields(self, newData):
         """ Update data object """
-        orgData = copy.deepcopy(self._data)
-        if newData:
-            self._data.update(newData)
+        self._data.update(newData)
 
-        if not self._saveValues:
-            self._data = orgData
-            msgBox = utils.generateMessageBox(message="Failed to load preset, may be malformed",
-                                              windowTitle="Failed to load preset", icon=QMessageBox.Warning)
-            msgBox.exec()
+        # None is always the 0th index
+        for item in ['preprocessor', 'denoise', 'sharpen']:
+            value = self._data.get(item, 'None')
+            if value is None:
+                value = 'None'
+
+            index = self._dropdowns[item].findText(value['type']) if value != 'None' else 0
+            if index >= 0:
+                self._dropdowns[item].setCurrentIndex(index)
+                if index > 0:
+                    if item == 'denoise':
+                        self._setDenoiseLayout(value['type'])
+                        options = self._knlmOptions if value['type'] == 'KNLM' else self._bm3dOptions
+                        options.loadArgs(value['args'])
+                    elif item == 'sharpen':
+                        self._setSharpenLayout(value['type'])
+                        self._fineSharpOptions.loadArgs(value['args'])
+
+    def saveHistory(self):
+        """ Save history """
+        self._saveValues(ignoreErrors=True)
+        self._presetLoader.savePreset(self._data)

@@ -13,9 +13,9 @@ HISTORY_PRESET = os.path.join(RESOURCES_DIR, 'history.json')
 
 class PresetLoader():
     """ Preset loader class """
-    def __init__(self, VSPanel, useHistory=True):
+    def __init__(self, vsPanel, useHistory=True):
         """ Initializer """
-        self._VSPanel = VSPanel
+        self._vsPanel = vsPanel
         if useHistory and os.path.isfile(HISTORY_PRESET):
             self.loadPreset(HISTORY_PRESET)
 
@@ -25,7 +25,7 @@ class PresetLoader():
         with open(preset, 'r') as fh:
             data = json.load(fh)
 
-        vsPanel.repopulateFields(data)
+        self._vsPanel.repopulateFields(data)
 
     def savePreset(self, data, filename=HISTORY_PRESET):
         """
@@ -34,9 +34,8 @@ class PresetLoader():
         """
         result = copy.deepcopy(data)
         for item in ['video', 'descale', 'crop']:
-            result.pop(item)
+            result.pop(item, None)
 
-        result['plugins'].pop('descale')
-
+        result['plugins'].pop('descale', None)
         with open(filename, 'w') as fh:
-            json.dumps(result, indent=4, sort_keys=True)
+            json.dump(result, fh, indent=4, sort_keys=True)

@@ -13,11 +13,11 @@ class DenoiseOptionKNLM(OptionsBase):
     """ Denoise options for KNLM """
     def __init__(self, parent=None):
         """ Initiailzer """
-        super().__init__(DENOISE_CONFIG['KNLM'], 'KNLM', parent)
+        super().__init__(DENOISE_CONFIG['KNLM'], 'KNLM', ['d', 'a', 's', 'h'], parent)
 
     def _generateWidgets(self):
         """ Generate subwidgets """
-        super()._generateWidgets(fields=['d', 'a', 's', 'h'], maxWidth=30)
+        super()._generateWidgets(maxWidth=30)
         self._channelsArg = self._generateDropDownArg(fields=["YUV", "Y", "UV", "RGB", "auto"])
         self._channelsArg.activated[str].connect(self._setChannelArg)
 
@@ -33,6 +33,14 @@ class DenoiseOptionKNLM(OptionsBase):
         """ Set channel argument """
         self.args['channels'] = text
 
+    def loadArgs(self, args):
+        """ Load args """
+        index = self._channelsArg.findText(args['channels'])
+        if index >= 0:
+            self._channelsArg.setCurrentIndex(index)
+
+        super().loadArgs(args)
+
     def save(self, ignoreErrors=False):
         """ Set and validate text args """
         return super().save(ignoreErrors=ignoreErrors, intArgs=['d', 'a', 's'], floatArgs=['h'])
@@ -42,11 +50,11 @@ class DenoiseOptionBM3D(OptionsBase):
     """ Denoise options for BM3D """
     def __init__(self, parent=None):
         """ Initiailzer """
-        super().__init__(DENOISE_CONFIG['BM3D'], 'BM3D', parent)
+        super().__init__(DENOISE_CONFIG['BM3D'], 'BM3D', ['sigma', 'radius1', 'matrix'], parent)
 
     def _generateWidgets(self):
         """ Generate subwidgets """
-        super()._generateWidgets(fields=['sigma', 'radius1', 'matrix'], maxWidth=None)
+        super()._generateWidgets(maxWidth=None)
         self._profileArg = self._generateDropDownArg(fields=["fast", "lc", "np", "high", "very high"],
                                                      minWidth=60)
         self._profileArg.activated[str].connect(self._setProfileArg)
@@ -63,6 +71,14 @@ class DenoiseOptionBM3D(OptionsBase):
         """ Set profile1 argument """
         self.args['profile1'] = text
 
+    def loadArgs(self, args):
+        """ Load args """
+        index = self._profileArg.findText(args['profile1'])
+        if index >= 0:
+            self._profileArg.setCurrentIndex(index)
+
+        super().loadArgs(args)
+
     def save(self, ignoreErrors=False):
         """ Set and validate text args """
         return super().save(ignoreErrors=ignoreErrors, intArgs=['radius1'], floatArgs=['sigma'])
@@ -71,12 +87,8 @@ class DenoiseOptionBM3D(OptionsBase):
 class FineSharpOptions(OptionsBase):
     """ FineSharp option """
     def __init__(self, parent=None):
-        """ Initiailzer """
-        super().__init__(SHARPEN_CONFIG['FineSharp'], 'FineSharp', parent)
-
-    def _generateWidgets(self):
-        """ Generate subwidgets """
-        return super()._generateWidgets(fields=['sstr'])
+        """ Initializer """
+        super().__init__(SHARPEN_CONFIG['FineSharp'], 'FineSharp', ['sstr'], parent)
 
     def _generateLayout(self):
         """ Generate layout """
@@ -85,7 +97,7 @@ class FineSharpOptions(OptionsBase):
     def save(self, ignoreErrors=False):
         """ Set and validate text args """
         result = super().save(ignoreErrors=ignoreErrors, floatArgs=['sstr'])
-        if result:
+        if result and not ignoreErrors:
             if self.args['sstr'] > 255:
                 msgBox = generateMessageBox(f"{self._optionName} sstr arg cannot be greater than 255", icon=QMessageBox.Critical,
                                             windowTitle="Invalid argument", buttons=QMessageBox.Ok)

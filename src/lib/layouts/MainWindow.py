@@ -153,3 +153,8 @@ class MainWindow(QMainWindow):
     def resizeEvent(self, event):
         self._loadingScreen.resize(event.size())
         event.accept()
+
+    def closeEvent(self, event):
+        """ Save history if save history is toggled """
+        self._vsPanelLayout.saveHistory()
+        event.accept()

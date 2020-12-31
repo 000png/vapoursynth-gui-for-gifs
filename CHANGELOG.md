@@ -4,22 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.0.2] - ???
+## [v0.0.2] - in progress
 
 ### Added
-**Features**
 
 * Loading and saving of presets, and history preset loaded automatically
+* This `CHANGELOG.md`
 
 ### Changed
-**Features**
 
 * Trimming now optional (will skip ffmpeg step)
-
-**Other**
-
-* This `CHANGELOG.md`
-* Cleaned up `VSPanelLayout.py` a bit, extracted `SubprocessManager.py`
 
 ## [v0.0.1] - 2020-12-30
 * [Associated PR](https://github.com/000png/vapoursynth-gui-for-gifs/pull/1)
