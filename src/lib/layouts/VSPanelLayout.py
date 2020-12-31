@@ -4,12 +4,10 @@ Layout containing options for Vapoursynth
 """
 import os
 import re
-import copy
 import posixpath
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QComboBox, \
-    QLabel, QHBoxLayout, QVBoxLayout, QMessageBox, QPlainTextEdit, QFileDialog, \
-    QStackedLayout, QStyle
+from PyQt5.QtWidgets import QWidget, QPushButton, QComboBox, QLabel, QVBoxLayout, QMessageBox, \
+    QPlainTextEdit, QFileDialog, QStackedLayout, QStyle
 
 import lib.utils.PyQtUtils as utils
 import lib.utils.VSConstants as c
@@ -28,6 +26,7 @@ NO_VIDEO_LOADED_SCRIPT = 'A video must be loaded before the script can be genera
 
 PANEL_WIDTH = 350
 ROW_HEIGHT = 50
+
 
 class VSPanelLayout(QVBoxLayout):
     """
@@ -142,7 +141,6 @@ class VSPanelLayout(QVBoxLayout):
         self._resizeCropButton = QPushButton("Resize And Crop")
         self._resizeCropButton.clicked.connect(self.openResizeCropWindow)
 
-        #self._resizeCropText = utils.generateTextEntry("copy & paste output from the resize/crop window here")
         self._resizeCropText = QPlainTextEdit()
         self._resizeCropText.setPlaceholderText("copy & paste output from the resize/crop window here")
         self._resizeCropText.setMaximumWidth(PANEL_WIDTH)
@@ -210,20 +208,38 @@ class VSPanelLayout(QVBoxLayout):
             self._resizeWindow = ResizeCropWindow(self._parent)
             self._resizeWindow.show()
 
+    def setTrimValues(self):
+        """ Set trim values """
+        start = self._trimStart.toPlainText().strip()
+        end = self._trimEnd.toPlainText().strip()
+        videoData = self._data['video']
+
+        if videoData['stateChanged'] or (start != videoData['start']) or (end != videoData['end']):
+            videoData['start'] = start
+            videoData['end'] = end
+            videoData['stateChanged'] = True
+        else:
+            videoData['stateChanged'] = False
+
+        return start, end
+
     def openResizeCropWindow(self):
         """ Open resize crop window """
         if 'video' not in self._data:
             utils.clearAndSetText(self._outputTerminal, "A video must be loaded in order to crop/resize it", clear=False, setTimestamp=True)
             return
 
-        # trim input video
-        start = self._trimStart.toPlainText().strip()
-        end = self._trimEnd.toPlainText().strip()
+        start, end = self.setTrimValues()
+        videoData = self._data['video']
 
-        self._subprocessManager.setSubprocess(trimVideo(self._data['video']['filename'], start, end,
-            trimFilename=os.path.abspath(os.path.join(WORK_DIR, 'resizer.webm')),
-            trimArgs="-vcodec libvpx -acodec libvorbis -preset ultrafast"),
-            self._finishedOpenCropWindow)
+        if videoData['stateChanged']:
+            self._subprocessManager.setSubprocess(trimVideo(videoData['filename'], start, end,
+                trimFilename=os.path.abspath(os.path.join(WORK_DIR, 'resizer.webm')),
+                trimArgs="-vcodec libvpx -acodec libvorbis -preset ultrafast"),
+                self._finishedOpenCropWindow)
+            videoData['stateChanged'] = False
+        else:
+            self._finishedOpenCropWindow()
 
     def _finishedCheckScriptOkay(self):
         result, _, _ = self._subprocessManager.getFinishedSubprocessResults()
@@ -364,13 +380,14 @@ class VSPanelLayout(QVBoxLayout):
         """ Clear script output terminal """
         self._outputTerminal.clear()
 
-    def setVideo(self, filename, duration):
+    def setVideo(self, filename):
         """ Set video path """
         self._data['video'] = {
             'filename': filename,
             'trimmedFilename': TRIMMED_FILENAME,
-            'trimStart': 0,
-            'trimEnd': duration
+            'start': "00:00:00",
+            'end': "00:00:05",
+            'stateChanged': True
         }
 
     def toScript(self):

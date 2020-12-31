@@ -114,8 +114,7 @@ class MainWindow(QMainWindow):
 
         if filename:
             self._videoLayout.loadVideoFile(filename)
-            #self._videoLayout.clearVideo(videoType='render')
-            self._vsPanelLayout.setVideo(filename, 100)
+            self._vsPanelLayout.setVideo(filename)
 
     def _toggleVideo(self, videoType):
         """ Toggle a video to show/hide """
