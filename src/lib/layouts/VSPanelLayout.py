@@ -4,6 +4,7 @@ Layout containing options for Vapoursynth
 """
 import os
 import re
+import copy
 import posixpath
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QComboBox, \
@@ -226,9 +227,8 @@ class VSPanelLayout(QVBoxLayout):
         result, _, _ = self._subprocessManager.getFinishedSubprocessResults()
         if result != 0:
             msgBox = utils.generateMessageBox(message="Script was invalid, check terminal output for logs",
-                                              windowTitle="Hold on!", icon=QMessageBox.Warning,
-                                              buttons=(QMessageBox.Ok | QMessageBox.Cancel))
-            canOverwrite = msgBox.exec() == QMessageBox.Ok
+                                              windowTitle="Script invalid", icon=QMessageBox.Warning)
+            msgBox.exec()
 
     def _checkScriptOkay(self):
         """ Check script is valid """
@@ -292,7 +292,7 @@ class VSPanelLayout(QVBoxLayout):
 
         if result != 0:
             msgBox = utils.generateMessageBox(f"Rendering failed; check terminal output for logs", icon=QMessageBox.Critical,
-                                              windowTitle="Invalid argument", buttons=QMessageBox.Ok)
+                                              windowTitle="Invalid argument")
             msgBox.exec()
         else:
             # set new video in render panel
@@ -384,6 +384,12 @@ class VSPanelLayout(QVBoxLayout):
 
     def repopulateFields(self, newData=None):
         """ Update data object """
+        orgData = copy.deepcopy(self._data)
         if newData:
             self._data.update(newData)
 
+        if not self._saveValues:
+            self._data = orgData
+            msgBox = utils.generateMessageBox(message="Failed to load preset, may be malformed",
+                                              windowTitle="Failed to load preset", icon=QMessageBox.Warning)
+            msgBox.exec()
