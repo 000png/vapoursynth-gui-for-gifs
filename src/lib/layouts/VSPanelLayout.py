@@ -4,6 +4,7 @@ Layout containing options for Vapoursynth
 """
 import os
 import re
+import time
 import posixpath
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QPushButton, QComboBox, QLabel, QVBoxLayout, QMessageBox, \
@@ -15,7 +16,7 @@ from lib.utils.SubprocessUtils import checkVSScript, renderVSVideo, trimVideo, T
 from lib.widgets.OptionsDenoiseSharpen import DenoiseOptionKNLM, DenoiseOptionBM3D, FineSharpOptions
 from lib.layouts.ResizeCropWindow import ResizeCropWindow
 from lib.helpers.SubprocessManager import SubprocessManager
-from lib.helpers.PresetLoader import PresetLoader
+from lib.helpers.PresetManager import PresetManager
 
 CWD = os.getcwd()
 SCRIPT_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__))).replace(os.sep, posixpath.sep)
@@ -48,7 +49,7 @@ class VSPanelLayout(QVBoxLayout):
         self._generateVapourSynthOptions()
         self._generateWidgets()
         self._generateLayout()
-        self._presetLoader = PresetLoader(self)
+        self._presetManager = PresetManager(self)
 
     def setSubprocessManager(self, loadingScreen):
         self._subprocessManager = SubprocessManager(loadingScreen, self._outputTerminal)
@@ -305,7 +306,6 @@ class VSPanelLayout(QVBoxLayout):
 
     def _finishedRender(self):
         result, out, err = self._subprocessManager.getFinishedSubprocessResults()
-        #utils.clearAndSetText(self._outputTerminal, f'Command: {cmd}', clear=False, setTimestamp=True)
         utils.clearAndSetText(self._outputTerminal, err, clear=False, setTimestamp=True)
 
         if result != 0:
@@ -314,7 +314,7 @@ class VSPanelLayout(QVBoxLayout):
             msgBox.exec()
         else:
             # set new video in render panel
-            self._parent.setRenderVideo(self._outputFileText.toPlainText().strip())
+            self._parent.setVideos(self._outputFileText.toPlainText().strip(), videoType='render')
 
     def renderVideo(self, regenerateScript=True):
         """ Render video """
@@ -357,6 +357,11 @@ class VSPanelLayout(QVBoxLayout):
 
     def _saveValues(self, ignoreErrors=False):
         """ Save all fields """
+        self._data['output'] = self._outputFileText.toPlainText().strip()
+        if 'video' in self._data:
+            self._data['video']['start'] = self._trimStart.toPlainText().strip()
+            self._data['video']['end'] = self._trimEnd.toPlainText().strip()
+
         orgData = self._resizeCropText.toPlainText().strip()
         resizeData = re.sub(r'\n\s*\n', '\n', orgData)
         resizeData = resizeData.split('\n')
@@ -423,7 +428,43 @@ class VSPanelLayout(QVBoxLayout):
                         self._setSharpenLayout(value['type'])
                         self._fineSharpOptions.loadArgs(value['args'])
 
-    def saveHistory(self):
+        if 'video' in self._data:
+            filename = self._data['video'].get('filename', None)
+            if filename and os.path.isfile(filename):
+                self._parent.setVideos(filename)
+                self._data['video']['stateChanged'] = True
+
+            utils.clearAndSetText(self._trimStart, self._data['video'].get('start', '00:00:00'), setToBottom=False)
+            utils.clearAndSetText(self._trimEnd, self._data['video'].get('end', '00:00:05'), setToBottom=False)
+
+        if 'output' in self._data:
+            utils.clearAndSetText(self._outputFileText, self._data['output'], setToBottom=False)
+
+        resizeCropText = ''
+        if self._data.get('descale', None):
+            resizeCropText += self._data['descale'] + '\n'
+
+        if self._data.get('crop', None):
+            resizeCropText += self._data['crop']
+        
+        if resizeCropText:
+            utils.clearAndSetText(self._resizeCropText, resizeCropText, setToBottom=False)
+
+    def savePreset(self, isHistory=False):
         """ Save history """
-        self._saveValues(ignoreErrors=True)
-        self._presetLoader.savePreset(self._data)
+        save = isHistory
+        if not isHistory:
+            filename, _ = QFileDialog.getSaveFileName(self._parent, 'Video Output Location', "", ';;'.join(['*.json']))
+            if filename:
+                save = True
+        else:
+            filename = None
+
+        if save:
+            self._saveValues(ignoreErrors=isHistory)
+            self._presetManager.savePreset(self._data, filename=filename, isHistory=isHistory)
+
+    def loadPreset(self):
+        filename, _ = QFileDialog.getOpenFileName(self._parent, 'Video Output Location', "", ';;'.join(['*.json']))
+        if filename:
+            self._presetManager.loadPreset(preset=filename)

@@ -7,11 +7,11 @@ import json
 import copy
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-RESOURCES_DIR = os.path.join(SCRIPT_DIR, '../resources')
-HISTORY_PRESET = os.path.join(RESOURCES_DIR, 'history.json')
+WORK_DIR = os.path.join(SCRIPT_DIR, '../../../work')
+HISTORY_PRESET = os.path.join(WORK_DIR, 'history.json')
 
 
-class PresetLoader():
+class PresetManager():
     """ Preset loader class """
     def __init__(self, vsPanel, useHistory=True):
         """ Initializer """
@@ -21,21 +21,23 @@ class PresetLoader():
 
     def loadPreset(self, preset):
         """ Load preset from JSON file """
+        if not os.path.isfile(preset):
+            return
+
         data = {}
         with open(preset, 'r') as fh:
             data = json.load(fh)
 
         self._vsPanel.repopulateFields(data)
 
-    def savePreset(self, data, filename=HISTORY_PRESET):
-        """
-        Essentially the data object but remove things that can't
-        be set as a preset, e.g. video data + resizing options
-        """
-        result = copy.deepcopy(data)
-        for item in ['video', 'descale', 'crop']:
-            result.pop(item, None)
+    def savePreset(self, data, filename=None, isHistory=False):
+        """ Essentially the data object """
+        if isHistory and not filename:
+            filename = HISTORY_PRESET
 
-        result['plugins'].pop('descale', None)
+        result = copy.deepcopy(data)
+        if not isHistory:
+            result.pop('video', None)
+
         with open(filename, 'w') as fh:
             json.dump(result, fh, indent=4, sort_keys=True)

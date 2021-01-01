@@ -5,8 +5,9 @@ Evaluate vs options from data
 
 def evaluateVapourSynthOptions(data):
     """ Evaluate VapourSynth options """
-    script = evaluateDescale(data.get('descale', None))
-    script += evaluatePreprocessorOptions(data.get('preprocessor', None))
+    script = evaluatePreprocessorOptions(data.get('preprocessor', None))
+    script += "\nvideo = core.fmtc.resample(video, css=\"444\")\n"
+    script += evaluateDescale(data.get('descale', None))
     script += evaluateDenoiseOptions(data.get('denoise', None))
     script += evaluateSharpenOptions(data.get('sharpen', None))
     script += evaluateCrop(data.get('crop', None))
