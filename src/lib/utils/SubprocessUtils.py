@@ -20,12 +20,12 @@ def checkVSScript(filename):
     return f"{VS_PIPE} --info {filename} -"
 
 
-def trimVideo(filename, start, end, trimFilename=TRIMMED_FILENAME, trimArgs="-vcodec libx264 -preset ultrafast -pix_fmt yuv420p"):
+def trimVideo(filename, start, end, trimFilename=TRIMMED_FILENAME, trimArgs="-vcodec libx264 -preset medium -pix_fmt yuv420p"):
     """ Trim video """
     return f'"{FFMPEG}" -y -ss {start} -t {end} -i "{filename}" {trimArgs} "{trimFilename}"'
 
 
-def renderVSVideo(script, inFilename, outFilename, extension, start, end):
+def renderVSVideo(script, inFilename, outFilename, extension):
     """ Render VS video """
     exe = f'{VS_PIPE} --y4m {script} - | {FFMPEG}'
 
@@ -44,7 +44,7 @@ def renderVSVideo(script, inFilename, outFilename, extension, start, end):
     with open(RENDER_BAT, 'w') as fh:
         fh.write(cmd.replace('/', '\\'))
 
-    return [trimVideo(inFilename, start, end), RENDER_BAT]
+    return RENDER_BAT
 
 
 def runSubprocess(cmd, errorMsg=None, withShell=False):

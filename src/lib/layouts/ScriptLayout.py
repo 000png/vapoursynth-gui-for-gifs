@@ -51,8 +51,7 @@ import vapoursynth as vs
 core = vs.get_core()
 #core.max_cache_size = 1000 #Use this command to limit the RAM usage (1000 is equivalent to 1GB of RAM)
 
-video = core.lsmas.LWLibavSource(source=r"{videoData['trimmedFilename']}")
-video = core.fmtc.resample(video, css="444")
+video = core.lsmas.LWLibavSource(source=r"{videoData['filename']}")
 """
         # add options
         script += evaluateVapourSynthOptions(data)

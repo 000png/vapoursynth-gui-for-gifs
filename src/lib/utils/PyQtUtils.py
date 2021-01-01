@@ -79,3 +79,12 @@ def generateTextEntry(text=''):
     tb.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
 
     return tb
+
+
+def findAndSetIndex(combo, value, comboBoxName=None, errMsg=None):
+    """ Set combobox to specified value """
+    index = combo.findText(value)
+    if index >= 0:
+        combo.setCurrentIndex(index)
+    
+    return index >= 0

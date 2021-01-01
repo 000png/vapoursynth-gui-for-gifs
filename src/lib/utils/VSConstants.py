@@ -57,3 +57,13 @@ SHARPEN_CONFIG = {
 DESCALE_PLUGINS = {
     'descale': 'import descale as descale'    
 }
+
+TRIM_PLUGINS = {}
+
+TRIM_CONFIG = {
+    'None': None,
+    'Yes': {
+        'start frame': 0,
+        'end frame': 100
+    }
+}

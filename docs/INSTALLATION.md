@@ -12,7 +12,7 @@ If you downloaded this repo correctly, there should be a `src/bin` directory whe
 
 * `vsrepogui.json`
 
-All you need to do is extract the following archives under `resources` into this directory. 
+All you need to do is extract the following archives under `archive` into this directory. 
 
 * `python3.8.7.7z` (includes vapoursynth)
 * `pyqt5.15.7z`

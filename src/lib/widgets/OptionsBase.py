@@ -15,11 +15,12 @@ DROPDOWN_ARG_MIN_WIDTH = 50
 
 class OptionsBase(QWidget):
     """ Options base class """
-    def __init__(self, sourceConfig, optionName, parent=None):
+    def __init__(self, sourceConfig, optionName, textFieldArgs, parent=None):
         super().__init__(parent)
         self.args = copy.deepcopy(sourceConfig)
         self._optionName = optionName
         self._argPlainTextWidgets = {}
+        self._textFieldArgs = textFieldArgs
 
         self._generateWidgets()
         self._generateLayout()
@@ -32,12 +33,12 @@ class OptionsBase(QWidget):
         dropDown.setMinimumWidth(minWidth)
         return dropDown
 
-    def _generateWidgets(self, fields=None, maxWidth=ARG_MAX_WIDTH, maxHeight=ARG_MAX_HEIGHT):
+    def _generateWidgets(self, maxWidth=ARG_MAX_WIDTH, maxHeight=ARG_MAX_HEIGHT):
         """ Generate subwidgets """
-        if not fields:
+        if not self._textFieldArgs:
             return
 
-        for item in fields:
+        for item in self._textFieldArgs:
             self._argPlainTextWidgets[item] = generateTextEntry(str(self.args[item]))
             if maxWidth is not None:
                 self._argPlainTextWidgets[item].setMaximumWidth(maxWidth)
@@ -80,13 +81,13 @@ class OptionsBase(QWidget):
             except ValueError:
                 if not ignoreErrors:
                     requiredType = 'an integer' if key in intArgs else 'a float'
-                    msgBox = generateMessageBox(f"{self._optionName} {key} arg must be {requiredType}", icon=QMessageBox.Critical,
+                    msgBox = generateMessageBox(f"{self._optionName} '{key}' arg must be {requiredType}", icon=QMessageBox.Critical,
                                                 windowTitle="Invalid argument", buttons=QMessageBox.Ok)
                     msgBox.exec()
                     return False
 
             if not ignoreErrors and (key in intArgs or key in floatArgs) and result < 0:
-                msgBox = generateMessageBox(f"{self._optionName} {key} arg cannot be negative", icon=QMessageBox.Critical,
+                msgBox = generateMessageBox(f"{self._optionName} '{key}' arg cannot be negative", icon=QMessageBox.Critical,
                                             windowTitle="Invalid argument", buttons=QMessageBox.Ok)
                 msgBox.exec()
                 return False
@@ -94,3 +95,17 @@ class OptionsBase(QWidget):
             self.args[key] = result
 
         return True
+
+    def loadArgs(self, args, textFieldArgs=None):
+        """ Load text args """
+        for item in self.args:
+            if item not in args:
+                raise ValueError(f"Could not find denoise {self._optionName} arg '{item}' in loaded preset, may be malformed")
+
+        if not textFieldArgs:
+            textFieldArgs = self._textFieldArgs
+
+        self.args.update(args)
+        for item in textFieldArgs:
+            self._argPlainTextWidgets[item].clear()
+            self._argPlainTextWidgets[item].setPlainText(str(args[item]))

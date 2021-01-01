@@ -137,4 +137,4 @@ class VideoPlayerWidget(QWidget):
 
     def clearVideo(self):
         """ Clear video """
-        self._mediaPlayer.setVideoOutput(None)
+        self._mediaPlayer.setMedia(QMediaContent(None))

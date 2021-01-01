@@ -4,6 +4,7 @@ Main base layout for application
 """
 import os
 import sys
+import posixpath
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QDir, Qt, QUrl
 from PyQt5.QtWidgets import QMainWindow, QWidget, QGridLayout, QAction, \
@@ -49,8 +50,9 @@ class MainWindow(QMainWindow):
 
         wid.setLayout(layout)
 
-        self.loadingScreen = WaitingSpinnerOverlay(self.centralWidget())
-        self.loadingScreen.hide()
+        self._loadingScreen = WaitingSpinnerOverlay(self.centralWidget())
+        self._loadingScreen.hide()
+        self._vsPanelLayout.setSubprocessManager(self._loadingScreen)
 
     def _generateActions(self):
         """ Generate actions """
@@ -87,12 +89,22 @@ class MainWindow(QMainWindow):
         self._toggleRenderVideo.setStatusTip('Toggle showing the render video in the editor')
         self._toggleRenderVideo.triggered.connect(lambda: self._toggleVideo('render'))
 
+        # preset actions
+        self._savePreset = QAction(QIcon(self.style().standardIcon(QStyle.SP_DialogSaveButton)), '&Save preset', self)
+        self._savePreset.setStatusTip('Save current editor state as preset')
+        self._savePreset.triggered.connect(lambda: self._vsPanelLayout.savePreset())
+        self._loadPreset = QAction(QIcon(self.style().standardIcon(QStyle.SP_DirIcon)), '&Load preset', self)
+        self._loadPreset.setStatusTip('Load preset into editor')
+        self._loadPreset.triggered.connect(lambda: self._vsPanelLayout.loadPreset())
+
     def _generateWindow(self):
         """ Generate window """
         # make menu bar and add actions
         menuBar = self.menuBar()
         fileMenu = menuBar.addMenu('&File')
         fileMenu.addAction(self._openAction)
+        fileMenu.addAction(self._loadPreset)
+        fileMenu.addAction(self._savePreset)
         fileMenu.addAction(self._saveScriptAction)
         fileMenu.addAction(self._exitAction)
 
@@ -113,8 +125,7 @@ class MainWindow(QMainWindow):
 
         if filename:
             self._videoLayout.loadVideoFile(filename)
-            #self._videoLayout.clearVideo(videoType='render')
-            self._vsPanelLayout.setVideo(filename, 100)
+            self._vsPanelLayout.setVideo(filename)
 
     def _toggleVideo(self, videoType):
         """ Toggle a video to show/hide """
@@ -143,12 +154,23 @@ class MainWindow(QMainWindow):
         """ Open up resize window """
         self._vsPanelLayout.openResizeCropWindow()
 
-    def setRenderVideo(self, filename):
-        """ Set render video """
-        _, extension = os.path.splitext(filename)
-        if extension != '.png':
-            self._videoLayout.loadVideoFile(filename, videoType='render')
+    def setVideos(self, filename, videoType=None):
+        """ Set original video """
+        filename = filename.replace(os.sep, posixpath.sep)
+
+        if videoType == 'render':
+            _, extension = os.path.splitext(filename)
+            if extension == '.png':
+                return
+
+        self._videoLayout.loadVideoFile(filename, videoType=videoType, forceLoad=True)
 
     def resizeEvent(self, event):
-        self.loadingScreen.resize(event.size())
+        self._loadingScreen.resize(event.size())
         event.accept()
+
+    def closeEvent(self, event):
+        """ Save history if save history is toggled """
+        self._vsPanelLayout.savePreset(isHistory=True)
+        event.accept()
+        

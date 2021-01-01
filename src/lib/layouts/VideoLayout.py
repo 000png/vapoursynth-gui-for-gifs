@@ -26,14 +26,16 @@ class DualVideoLayout(QGridLayout):
         self.addWidget(self._originalVideo, 0, 0)
         self.addWidget(self._renderVideo, 0, 1)
 
-    def loadVideoFile(self, filename, videoType=None):
+    def loadVideoFile(self, filename, videoType=None, forceLoad=False):
         """ Load video file """
         if videoType not in [None, 'original', 'render']:
             raise ValueError(f'Unrecognized videoType {videoType}')
 
-        if (not videoType or videoType == 'original') and self._originalVideo.isVisible():
+        self.clearVideo(videoType)
+
+        if (not videoType or videoType == 'original') and (self._originalVideo.isVisible() or forceLoad):
             self._originalVideo.loadVideoFile(filename)
-        if (not videoType or videoType == 'render') and self._renderVideo.isVisible():
+        if (not videoType or videoType == 'render') and (self._renderVideo.isVisible() or forceLoad):
             self._renderVideo.loadVideoFile(filename)
 
     def clearVideo(self, videoType=None):
