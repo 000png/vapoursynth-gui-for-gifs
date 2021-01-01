@@ -5,7 +5,8 @@ Evaluate vs options from data
 
 def evaluateVapourSynthOptions(data):
     """ Evaluate VapourSynth options """
-    script = evaluatePreprocessorOptions(data.get('preprocessor', None))
+    script = evaluateTrimOptions(data.get('trim', None))
+    script += evaluatePreprocessorOptions(data.get('preprocessor', None))
     script += "\nvideo = core.fmtc.resample(video, css=\"444\")\n"
     script += evaluateDescale(data.get('descale', None))
     script += evaluateDenoiseOptions(data.get('denoise', None))
@@ -13,6 +14,16 @@ def evaluateVapourSynthOptions(data):
     script += evaluateCrop(data.get('crop', None))
 
     return script
+
+
+def evaluateTrimOptions(trim):
+    if not trim:
+        return ''
+
+    args = trim['args']
+    return f"""
+video = core.std.Trim(video, first={args['start frame']}, last={args['end frame']})
+"""
 
 
 def evaluatePreprocessorOptions(preprocessor):

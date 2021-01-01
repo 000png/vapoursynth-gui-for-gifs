@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import QWidget, QPushButton, QComboBox, QLabel, QVBoxLayout
 import lib.utils.PyQtUtils as utils
 import lib.utils.VSConstants as c
 from lib.utils.SubprocessUtils import checkVSScript, renderVSVideo, trimVideo, TRIMMED_FILENAME
-from lib.widgets.OptionsDenoiseSharpen import DenoiseOptionKNLM, DenoiseOptionBM3D, FineSharpOptions
+from lib.widgets.OptionsVS import DenoiseOptionKNLM, DenoiseOptionBM3D, FineSharpOptions, TrimOptions
 from lib.layouts.ResizeCropWindow import ResizeCropWindow
 from lib.helpers.SubprocessManager import SubprocessManager
 from lib.helpers.PresetManager import PresetManager
@@ -83,10 +83,20 @@ class VSPanelLayout(QVBoxLayout):
 
         self._fineSharpOptions = FineSharpOptions()
 
+        # trimming; this is actually to preprocess trimming with ffmpeg beforehand or not
+        trim = QComboBox()
+        for item in c.TRIM_CONFIG.keys():
+            trim.addItem(item)
+        trim.activated[str].connect(
+            lambda text: self._addVapourSynthOption(text, 'trim', c.TRIM_PLUGINS, c.TRIM_CONFIG, self._setTrimLayout))
+
+        self._vsTrimOption = TrimOptions()
+
         self._dropdowns = {
             'preprocessor': preprocessor,
             'denoise': denoise,
-            'sharpen': sharpen
+            'sharpen': sharpen,
+            'trim': trim
         }
 
     def _addVapourSynthOption(self, text, key, vsPlugin, vsConfig, otherFuncToExecute=None):
@@ -115,10 +125,11 @@ class VSPanelLayout(QVBoxLayout):
 
     def _setSharpenLayout(self, text):
         self._fineSharpOptions.save(ignoreErrors=True)
-        if text == 'None':
-            self._sharpenOptions.hide()
-        else:
-            self._sharpenOptions.show()
+        self._sharpenOptions.hide() if text == 'None' else self._sharpenOptions.show()
+
+    def _setTrimLayout(self, text):
+        self._vsTrimOption.save(ignoreErrors=True)
+        self._trimOptions.hide() if text == 'None' else self._trimOptions.show()
 
     def _openOutputFileDialogue(self):
         """ Open file dialogue """
@@ -133,11 +144,6 @@ class VSPanelLayout(QVBoxLayout):
         self._outputFileButton.setIcon(self._parent.style().standardIcon(QStyle.SP_DirIcon))
         self._outputFileButton.setMaximumWidth(ROW_HEIGHT)
         self._outputFileButton.clicked.connect(self._openOutputFileDialogue)
-
-        self._trimStart = utils.generateTextEntry("00:00:00")
-        self._trimEnd = utils.generateTextEntry("00:00:05")
-        for item in [self._outputFileText, self._trimStart, self._trimEnd]:
-            item.setMaximumHeight(ROW_HEIGHT / 2)
 
         self._resizeCropButton = QPushButton("Resize And Crop")
         self._resizeCropButton.clicked.connect(self.openResizeCropWindow)
@@ -167,14 +173,15 @@ class VSPanelLayout(QVBoxLayout):
         """ Generate layout """
         outputRow = QWidget()
         outputRow.setLayout(utils.generateRow('Output:', [self._outputFileText, self._outputFileButton]))
+        outputRow.setMaximumWidth(PANEL_WIDTH)
+        outputRow.setMaximumHeight(ROW_HEIGHT / 2)
+        self.addWidget(outputRow)
 
-        trimRow = QWidget()
-        trimRow.setLayout(utils.generateRow('Trim (HH:MM:SS):', [self._trimStart, QLabel(':'), self._trimEnd]))
-
-        for item in [outputRow, trimRow]:
-            item.setMaximumWidth(PANEL_WIDTH)
-            item.setMaximumHeight(ROW_HEIGHT / 2)
-            self.addWidget(item)
+        # stack trim options
+        self.addLayout(utils.generateRow('Apply trimming:', self._dropdowns['trim']))
+        self._trimOptions, trimStack = utils.generateStackedWidget([self._vsTrimOption], PANEL_WIDTH, ROW_HEIGHT)
+        self.addWidget(self._trimOptions)
+        self._trimOptions.hide()
 
         self.addWidget(self._resizeCropButton)
         self.addWidget(self._resizeCropText)
@@ -196,7 +203,8 @@ class VSPanelLayout(QVBoxLayout):
 
         self._stacks = {
             'denoise': denoiseStack,
-            'sharpen': sharpenStack
+            'sharpen': sharpenStack,
+            'trim': trimStack
         }
 
         self.addLayout(utils.generateRow(self._checkVSScriptButton, self._generateScriptButton))
@@ -209,32 +217,15 @@ class VSPanelLayout(QVBoxLayout):
             self._resizeWindow = ResizeCropWindow(self._parent)
             self._resizeWindow.show()
 
-    def setTrimValues(self):
-        """ Set trim values """
-        start = self._trimStart.toPlainText().strip()
-        end = self._trimEnd.toPlainText().strip()
-        videoData = self._data['video']
-
-        if videoData['stateChanged'] or (start != videoData['start']) or (end != videoData['end']):
-            videoData['start'] = start
-            videoData['end'] = end
-            videoData['stateChanged'] = True
-        else:
-            videoData['stateChanged'] = False
-
-        return start, end
-
     def openResizeCropWindow(self):
         """ Open resize crop window """
         if 'video' not in self._data:
             utils.clearAndSetText(self._outputTerminal, "A video must be loaded in order to crop/resize it", clear=False, setTimestamp=True)
             return
 
-        start, end = self.setTrimValues()
         videoData = self._data['video']
-
         if videoData['stateChanged']:
-            self._subprocessManager.setSubprocess(trimVideo(videoData['filename'], start, end,
+            self._subprocessManager.setSubprocess(trimVideo(videoData['filename'], '00:00:00', '00:01:00',
                 trimFilename=os.path.abspath(os.path.join(WORK_DIR, 'resizer.webm')),
                 trimArgs="-vcodec libvpx -acodec libvorbis -preset ultrafast"),
                 self._finishedOpenCropWindow)
@@ -331,10 +322,8 @@ class VSPanelLayout(QVBoxLayout):
             fullFilePath = os.path.join(os.path.dirname(fullFilePath), filename)
 
         if self.scriptToFile(TMP_VS_SCRIPT, regenerateScript=regenerateScript):
-            start = self._trimStart.toPlainText().strip()
-            end = self._trimEnd.toPlainText().strip()
-            cmds = renderVSVideo(TMP_VS_SCRIPT, self._data['video']['filename'], fullFilePath, extension, start, end)
-            self._subprocessManager.setSubprocess(cmds[0], None, nextCmd={'cmd': cmds[1], 'onFinish': self._finishedRender})
+            cmd = renderVSVideo(TMP_VS_SCRIPT, self._data['video']['filename'], fullFilePath, extension)
+            self._subprocessManager.setSubprocess(cmd, self._finishedRender)
         else:
             utils.clearAndSetText(self._outputTerminal, f'Failed to render video; make sure script is correct', clear=False, setTimestamp=True)
 
@@ -358,9 +347,6 @@ class VSPanelLayout(QVBoxLayout):
     def _saveValues(self, ignoreErrors=False):
         """ Save all fields """
         self._data['output'] = self._outputFileText.toPlainText().strip()
-        if 'video' in self._data:
-            self._data['video']['start'] = self._trimStart.toPlainText().strip()
-            self._data['video']['end'] = self._trimEnd.toPlainText().strip()
 
         orgData = self._resizeCropText.toPlainText().strip()
         resizeData = re.sub(r'\n\s*\n', '\n', orgData)
@@ -379,7 +365,8 @@ class VSPanelLayout(QVBoxLayout):
             self._data['crop'] = None
 
         return self._checkCanSaveOption('denoise', self._denoiseOptions, ignoreErrors) and \
-            self._checkCanSaveOption('sharpen', self._sharpenOptions, ignoreErrors)
+            self._checkCanSaveOption('sharpen', self._sharpenOptions, ignoreErrors) and \
+            self._checkCanSaveOption('trim', self._trimOptions, ignoreErrors)
 
     def clearTerminal(self):
         """ Clear script output terminal """
@@ -389,9 +376,6 @@ class VSPanelLayout(QVBoxLayout):
         """ Set video path """
         self._data['video'] = {
             'filename': filename,
-            'trimmedFilename': TRIMMED_FILENAME,
-            'start': "00:00:00",
-            'end': "00:00:05",
             'stateChanged': True
         }
 
@@ -411,7 +395,7 @@ class VSPanelLayout(QVBoxLayout):
         self._data.update(newData)
 
         # None is always the 0th index
-        for item in ['preprocessor', 'denoise', 'sharpen']:
+        for item in ['preprocessor', 'denoise', 'sharpen', 'trim']:
             value = self._data.get(item, 'None')
             if value is None:
                 value = 'None'
@@ -427,15 +411,15 @@ class VSPanelLayout(QVBoxLayout):
                     elif item == 'sharpen':
                         self._setSharpenLayout(value['type'])
                         self._fineSharpOptions.loadArgs(value['args'])
+                    elif item == 'trim':
+                        self._setTrimLayout(value['type'])
+                        self._vsTrimOption.loadArgs(value['args'])
 
         if 'video' in self._data:
             filename = self._data['video'].get('filename', None)
             if filename and os.path.isfile(filename):
                 self._parent.setVideos(filename)
                 self._data['video']['stateChanged'] = True
-
-            utils.clearAndSetText(self._trimStart, self._data['video'].get('start', '00:00:00'), setToBottom=False)
-            utils.clearAndSetText(self._trimEnd, self._data['video'].get('end', '00:00:05'), setToBottom=False)
 
         if 'output' in self._data:
             utils.clearAndSetText(self._outputFileText, self._data['output'], setToBottom=False)
@@ -453,12 +437,11 @@ class VSPanelLayout(QVBoxLayout):
     def savePreset(self, isHistory=False):
         """ Save history """
         save = isHistory
+        filename = None
         if not isHistory:
             filename, _ = QFileDialog.getSaveFileName(self._parent, 'Video Output Location', "", ';;'.join(['*.json']))
             if filename:
                 save = True
-        else:
-            filename = None
 
         if save:
             self._saveValues(ignoreErrors=isHistory)

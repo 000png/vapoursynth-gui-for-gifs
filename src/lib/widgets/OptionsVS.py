@@ -4,7 +4,7 @@ Denoise and sharpen options.
 """
 from PyQt5.QtWidgets import QLabel, QMessageBox
 
-from lib.utils.VSConstants import DENOISE_CONFIG, SHARPEN_CONFIG
+from lib.utils.VSConstants import DENOISE_CONFIG, SHARPEN_CONFIG, TRIM_CONFIG
 from lib.widgets.OptionsBase import OptionsBase
 from lib.utils.PyQtUtils import generateMessageBox
 
@@ -105,3 +105,17 @@ class FineSharpOptions(OptionsBase):
                 return False
 
         return result
+
+class TrimOptions(OptionsBase):
+    """ FineSharp option """
+    def __init__(self, parent=None):
+        """ Initializer """
+        super().__init__(TRIM_CONFIG['Yes'], 'Trimming', ['start frame', 'end frame'], parent)
+
+    def _generateLayout(self):
+        """ Generate layout """
+        return super()._generateLayout(addStretch=True)
+
+    def save(self, ignoreErrors=False):
+        """ Set and validate text args """
+        return super().save(ignoreErrors=ignoreErrors, intArgs=['start frame', 'end frame'])

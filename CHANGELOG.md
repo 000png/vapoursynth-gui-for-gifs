@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* Trimming now optional (will skip ffmpeg step)
+* Trimming now optional and done through VS, not ffmpeg
 * Resizing/cropping only rerenders resizer.webm if the video state has changed
 
 ## [v0.0.1] - 2020-12-30
