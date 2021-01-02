@@ -2,6 +2,7 @@
 """
 Layout containing generated script
 """
+import os
 from PyQt5.QtWidgets import QGridLayout, QPushButton, QPlainTextEdit, QWidget
 from PyQt5.QtGui import QFont
 
@@ -41,6 +42,12 @@ class ScriptEditor(QPlainTextEdit):
         videoData = data['video']
         plugins = '\n'.join(data['plugins'].values())
 
+        _, extension = os.path.splitext(videoData['filename'])
+        if extension == '.mp4':
+            sourceInput = f"video = core.ffms2.Source(source=r\"{videoData['filename']}\")"
+        else:
+            sourceInput = f"video = core.lsmas.LWLibavSource(source=r\"{videoData['filename']}\")"
+
         script = f"""#!./bin/python.exe
 import sys
 sys.path.append('../src/bin/scripts64')
@@ -51,7 +58,7 @@ import vapoursynth as vs
 core = vs.get_core()
 #core.max_cache_size = 1000 #Use this command to limit the RAM usage (1000 is equivalent to 1GB of RAM)
 
-video = core.lsmas.LWLibavSource(source=r"{videoData['filename']}")
+{sourceInput}
 """
         # add options
         script += evaluateVapourSynthOptions(data)
