@@ -17,7 +17,7 @@ RENDER_BAT = os.path.join(WORK_DIR, 'render.bat').replace(os.sep, posixpath.sep)
 
 def checkVSScript(filename):
     """ Verify given script is valid """
-    return f"{VS_PIPE} --info {filename} -"
+    return f'"{VS_PIPE}" --info "{filename}" -'
 
 
 def trimVideo(filename, start, end, trimFilename=TRIMMED_FILENAME, trimArgs="-vcodec libx264 -preset medium -pix_fmt yuv420p"):
@@ -27,15 +27,15 @@ def trimVideo(filename, start, end, trimFilename=TRIMMED_FILENAME, trimArgs="-vc
 
 def renderVSVideo(script, inFilename, outFilename, extension):
     """ Render VS video """
-    exe = f'{VS_PIPE} --y4m {script} - | {FFMPEG}'
+    exe = f'"{VS_PIPE}" --y4m "{script}" - | "{FFMPEG}"'
 
     if extension == '.png':
-        cmd = f'{exe} -f yuv4mpegpipe -i - -y {outFilename}'
+        cmd = f'{exe} -f yuv4mpegpipe -i - -y "{outFilename}"'
     elif extension == '.mov':
         cmd = f'{exe} -f yuv4mpegpipe -colorspace bt709 -i - -vcodec rawvideo -pix_fmt rgb24 ' \
-            + f'-sws_flags full_chroma_int+accurate_rnd -y {outFilename}'
+            + f'-sws_flags full_chroma_int+accurate_rnd -y "{outFilename}"'
     elif extension == '.mp4':
-        cmd = f'{exe} -f yuv4mpegpipe -colorspace bt709 -i - -vcodec libx264 -qp 0 -y {outFilename}'
+        cmd = f'{exe} -f yuv4mpegpipe -colorspace bt709 -i - -vcodec libx264 -qp 0 -y "{outFilename}"'
     else:
         raise ValueError(f"Unrecognized extension {extension}")
 
@@ -44,7 +44,7 @@ def renderVSVideo(script, inFilename, outFilename, extension):
     with open(RENDER_BAT, 'w') as fh:
         fh.write(cmd.replace('/', '\\'))
 
-    return RENDER_BAT
+    return f'"{RENDER_BAT}"'
 
 
 def runSubprocess(cmd, errorMsg=None, withShell=False):
