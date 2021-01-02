@@ -42,11 +42,15 @@ class MainWindow(QMainWindow):
 
         self._videoLayout = DualVideoLayout(style=self.style())
         self._scriptLayout = ScriptLayout()
+        vsWidget = QWidget()
         self._vsPanelLayout = VSPanelLayout(scriptEditor=self._scriptLayout.scriptEditor, parent=self)
+        vsWidget.setLayout(self._vsPanelLayout)
+        vsWidget.setMaximumWidth(375)
+        self._vsPanelLayout.setContentsMargins(0, 0, 0, 0)
 
         layout.addLayout(self._videoLayout, 0, 0)
         layout.addLayout(self._scriptLayout, 1, 0)
-        layout.addLayout(self._vsPanelLayout, 0, 1, 0, 1)
+        layout.addWidget(vsWidget, 0, 1, 0, 1)
 
         wid.setLayout(layout)
 

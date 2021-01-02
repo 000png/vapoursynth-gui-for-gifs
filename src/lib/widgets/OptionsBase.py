@@ -4,13 +4,11 @@ Base class for options widgets
 """
 import copy
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QPlainTextEdit, QHBoxLayout, QLabel, QComboBox, \
-    QMessageBox
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QComboBox, QMessageBox
 
 from lib.utils.PyQtUtils import generateMessageBox, generateTextEntry
 
 ARG_MAX_WIDTH = 40
-ARG_MAX_HEIGHT = 25
 DROPDOWN_ARG_MIN_WIDTH = 50
 
 class OptionsBase(QWidget):
@@ -33,17 +31,15 @@ class OptionsBase(QWidget):
         dropDown.setMinimumWidth(minWidth)
         return dropDown
 
-    def _generateWidgets(self, maxWidth=ARG_MAX_WIDTH, maxHeight=ARG_MAX_HEIGHT):
+    def _generateWidgets(self, maxWidth=ARG_MAX_WIDTH):
         """ Generate subwidgets """
         if not self._textFieldArgs:
             return
 
         for item in self._textFieldArgs:
-            self._argPlainTextWidgets[item] = generateTextEntry(str(self.args[item]))
+            self._argPlainTextWidgets[item] = generateTextEntry(str(self.args[item]), oneLiner=True)
             if maxWidth is not None:
                 self._argPlainTextWidgets[item].setMaximumWidth(maxWidth)
-            if maxHeight is not None:
-                self._argPlainTextWidgets[item].setMaximumHeight(maxHeight)
 
     def _generateHBoxLayout(self, addStretch=False, abbreviate=False):
         """ Generate generate plain text args layout """
@@ -72,7 +68,7 @@ class OptionsBase(QWidget):
             floatArgs = []
 
         for key, value in self._argPlainTextWidgets.items():
-            result = value.toPlainText()
+            result = value.text()
             try:
                 if key in intArgs:
                     result = int(result)
@@ -108,4 +104,4 @@ class OptionsBase(QWidget):
         self.args.update(args)
         for item in textFieldArgs:
             self._argPlainTextWidgets[item].clear()
-            self._argPlainTextWidgets[item].setPlainText(str(args[item]))
+            self._argPlainTextWidgets[item].insert(str(args[item]))

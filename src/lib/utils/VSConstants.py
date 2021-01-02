@@ -64,6 +64,6 @@ TRIM_CONFIG = {
     'None': None,
     'Yes': {
         'start frame': 0,
-        'end frame': 100
+        'end frame': 60
     }
 }

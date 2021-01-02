@@ -25,9 +25,6 @@ TMP_VS_SCRIPT = os.path.abspath(os.path.join(WORK_DIR, 'tmp.vpy')).replace(os.se
 
 NO_VIDEO_LOADED_SCRIPT = 'A video must be loaded before the script can be generated and validated'
 
-PANEL_WIDTH = 350
-ROW_HEIGHT = 50
-
 
 class VSPanelLayout(QVBoxLayout):
     """
@@ -139,10 +136,10 @@ class VSPanelLayout(QVBoxLayout):
 
     def _generateWidgets(self):
         """ Generate other widgets """
-        self._outputFileText = utils.generateTextEntry(os.path.join(CWD, 'output.mov'))
+        self._outputFileText = utils.generateTextEntry(os.path.join(CWD, 'output.mov'), oneLiner=True)
         self._outputFileButton = QPushButton()
         self._outputFileButton.setIcon(self._parent.style().standardIcon(QStyle.SP_DirIcon))
-        self._outputFileButton.setMaximumWidth(ROW_HEIGHT)
+        self._outputFileButton.setMaximumWidth(50)
         self._outputFileButton.clicked.connect(self._openOutputFileDialogue)
 
         self._resizeCropButton = QPushButton("Resize And Crop")
@@ -150,8 +147,7 @@ class VSPanelLayout(QVBoxLayout):
 
         self._resizeCropText = QPlainTextEdit()
         self._resizeCropText.setPlaceholderText("copy & paste output from the resize/crop window here")
-        self._resizeCropText.setMaximumWidth(PANEL_WIDTH)
-        self._resizeCropText.setMaximumHeight(ROW_HEIGHT)
+        self._resizeCropText.setMaximumHeight(75)
 
         self._generateScriptButton = QPushButton("Generate Script")
         self._generateScriptButton.clicked.connect(self._generateScript)
@@ -167,19 +163,16 @@ class VSPanelLayout(QVBoxLayout):
 
         self._outputTerminal = QPlainTextEdit()
         self._outputTerminal.setReadOnly(True)
-        self._outputTerminal.setMaximumWidth(PANEL_WIDTH)
 
     def _generateLayout(self):
         """ Generate layout """
         outputRow = QWidget()
         outputRow.setLayout(utils.generateRow('Output:', [self._outputFileText, self._outputFileButton]))
-        outputRow.setMaximumWidth(PANEL_WIDTH)
-        outputRow.setMaximumHeight(ROW_HEIGHT / 2)
         self.addWidget(outputRow)
 
         # stack trim options
         self.addLayout(utils.generateRow('Apply trimming:', self._dropdowns['trim']))
-        self._trimOptions, trimStack = utils.generateStackedWidget([self._vsTrimOption], PANEL_WIDTH, ROW_HEIGHT)
+        self._trimOptions, trimStack = utils.generateStackedWidget([self._vsTrimOption])
         self.addWidget(self._trimOptions)
         self._trimOptions.hide()
 
@@ -190,14 +183,14 @@ class VSPanelLayout(QVBoxLayout):
         # stack denoise options
         self.addLayout(utils.generateRow('Denoise', self._dropdowns['denoise']))
         self._denoiseOptions, denoiseStack = utils.generateStackedWidget(
-            [self._knlmOptions, self._bm3dOptions], PANEL_WIDTH, ROW_HEIGHT)
+            [self._knlmOptions, self._bm3dOptions])
         self.addWidget(self._denoiseOptions)
         self._denoiseOptions.hide()
 
         # stack sharpen options
         self.addLayout(utils.generateRow("Sharpen", self._dropdowns['sharpen']))
         self._sharpenOptions, sharpenStack = utils.generateStackedWidget(
-            [self._fineSharpOptions], PANEL_WIDTH, ROW_HEIGHT)
+            [self._fineSharpOptions])
         self.addWidget(self._sharpenOptions)
         self._sharpenOptions.hide()
 
@@ -305,7 +298,7 @@ class VSPanelLayout(QVBoxLayout):
             msgBox.exec()
         else:
             # set new video in render panel
-            self._parent.setVideos(self._outputFileText.toPlainText().strip(), videoType='render')
+            self._parent.setVideos(self._outputFileText.text().strip(), videoType='render')
 
     def renderVideo(self, regenerateScript=True):
         """ Render video """
@@ -313,7 +306,7 @@ class VSPanelLayout(QVBoxLayout):
             utils.clearAndSetText(self._outputTerminal, "A video must be loaded in order to render it", clear=False, setTimestamp=True)
             return
 
-        fullFilePath = self._outputFileText.toPlainText()
+        fullFilePath = self._outputFileText.text()
         fullFilePath = fullFilePath.strip()
         filename, extension = os.path.splitext(fullFilePath)
         # reformat for png sequence
@@ -346,7 +339,7 @@ class VSPanelLayout(QVBoxLayout):
 
     def _saveValues(self, ignoreErrors=False):
         """ Save all fields """
-        self._data['output'] = self._outputFileText.toPlainText().strip()
+        self._data['output'] = self._outputFileText.text().strip()
 
         orgData = self._resizeCropText.toPlainText().strip()
         resizeData = re.sub(r'\n\s*\n', '\n', orgData)
@@ -420,6 +413,8 @@ class VSPanelLayout(QVBoxLayout):
             if filename and os.path.isfile(filename):
                 self._parent.setVideos(filename)
                 self._data['video']['stateChanged'] = True
+            else:
+                data.pop('video', None)
 
         if 'output' in self._data:
             utils.clearAndSetText(self._outputFileText, self._data['output'], setToBottom=False)

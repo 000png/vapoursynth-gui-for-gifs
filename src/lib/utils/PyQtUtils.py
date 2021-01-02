@@ -5,7 +5,7 @@ General widget utils shared by everything
 from datetime import datetime
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMessageBox, QHBoxLayout, QLabel, QWidget, \
-    QStackedLayout, QPlainTextEdit, QPushButton
+    QStackedLayout, QPlainTextEdit, QPushButton, QLineEdit
 
 def generateMessageBox(message, icon=QMessageBox.Information, windowTitle="Info",
                        buttons=QMessageBox.Ok):
@@ -40,17 +40,22 @@ def generateRow(label, widgets, setZeroMargins=True):
 
 def clearAndSetText(textWidget, text, clear=True, setTimestamp=False, setToBottom=True):
     """ Clear and set text widget """
-    if setTimestamp:
-        text = f"{datetime.now().time()} {text}"
+    oneLiner = isinstance(textWidget, QLineEdit)
 
     if clear:
         textWidget.clear()
 
-    if setToBottom:
-        text = f"{text}\n\n"
-        textWidget.verticalScrollBar().setValue(textWidget.verticalScrollBar().maximum());
+    if not oneLiner:
+        if setTimestamp:
+            text = f"{datetime.now().time()} {text}"
 
-    textWidget.insertPlainText(text)
+        if setToBottom:
+            text = f"{text}\n\n"
+            textWidget.verticalScrollBar().setValue(textWidget.verticalScrollBar().maximum());
+
+        textWidget.insertPlainText(text)
+    else:
+        textWidget.insert(text)
 
 
 def generateStackedWidget(widgets, maxWidth=None, maxHeight=None):
@@ -64,19 +69,26 @@ def generateStackedWidget(widgets, maxWidth=None, maxHeight=None):
 
     if maxWidth is not None and maxWidth > 0:
         w.setMaximumWidth(maxWidth)
+    else:
+        w.setMaximumWidth(widgets[0].frameGeometry().width())
 
     if maxHeight is not None and maxHeight > 0:
         w.setMaximumHeight(maxHeight)
+    else:
+        w.setMaximumHeight(widgets[0].frameGeometry().height())
 
     return w, stack
 
 
-def generateTextEntry(text=''):
+def generateTextEntry(text='', oneLiner=False):
     """ Generate text box with presets """
-    tb = QPlainTextEdit(text)
-    tb.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-    tb.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-    tb.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+    if oneLiner:
+        tb = QLineEdit(text)
+    else:
+        tb = QPlainTextEdit(text)
+        tb.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        tb.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        tb.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
 
     return tb
 
