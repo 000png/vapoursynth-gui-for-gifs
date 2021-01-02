@@ -414,7 +414,7 @@ class VSPanelLayout(QVBoxLayout):
                 self._parent.setVideos(filename)
                 self._data['video']['stateChanged'] = True
             else:
-                data.pop('video', None)
+                self._data.pop('video', None)
 
         if 'output' in self._data:
             utils.clearAndSetText(self._outputFileText, self._data['output'], setToBottom=False)

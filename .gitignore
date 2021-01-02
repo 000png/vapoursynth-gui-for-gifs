@@ -7,3 +7,4 @@ src/test.py
 work/*
 !work/README.md
 output.mov
+*.lnk
