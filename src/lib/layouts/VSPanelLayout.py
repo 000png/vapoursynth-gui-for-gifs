@@ -49,6 +49,7 @@ class VSPanelLayout(QVBoxLayout):
         self._presetManager = PresetManager(self)
 
     def setSubprocessManager(self, loadingScreen):
+        """ Set the subprocess manager """
         self._subprocessManager = SubprocessManager(loadingScreen, self._outputTerminal)
 
     def _generateVapourSynthOptions(self):
@@ -110,7 +111,7 @@ class VSPanelLayout(QVBoxLayout):
             otherFuncToExecute(text)
 
     def _setDenoiseLayout(self, text):
-        """ Set stack """
+        """ Set denoise layout, switch on stack """
         self._knlmOptions.save(ignoreErrors=True)
         self._bm3dOptions.save(ignoreErrors=True)
         if text == 'None':
@@ -121,10 +122,12 @@ class VSPanelLayout(QVBoxLayout):
                 else self._stacks['denoise'].setCurrentWidget(self._bm3dOptions)
 
     def _setSharpenLayout(self, text):
+        """ Set sharpen layout """
         self._fineSharpOptions.save(ignoreErrors=True)
         self._sharpenOptions.hide() if text == 'None' else self._sharpenOptions.show()
 
     def _setTrimLayout(self, text):
+        """ Set trim layout """
         self._vsTrimOption.save(ignoreErrors=True)
         self._trimOptions.hide() if text == 'None' else self._trimOptions.show()
 
@@ -205,6 +208,7 @@ class VSPanelLayout(QVBoxLayout):
         self.addWidget(self._outputTerminal)
 
     def _finishedOpenCropWindow(self):
+        """ On finished rendering webm for html window """
         result, out, err = self._subprocessManager.getFinishedSubprocessResults()
         if result == 0:
             self._resizeWindow = ResizeCropWindow(self._parent)
@@ -227,6 +231,7 @@ class VSPanelLayout(QVBoxLayout):
             self._finishedOpenCropWindow()
 
     def _finishedCheckScriptOkay(self):
+        """ On finished calling VSPipe to check if script is okay """
         result, _, _ = self._subprocessManager.getFinishedSubprocessResults()
         if result != 0:
             msgBox = utils.generateMessageBox(message="Script was invalid, check terminal output for logs",
@@ -289,6 +294,7 @@ class VSPanelLayout(QVBoxLayout):
             utils.clearAndSetText(self._outputTerminal, f"Script saved to {filename}", clear=False, setTimestamp=True)
 
     def _finishedRender(self):
+        """ On finish rendering through VapourSynth """
         result, out, err = self._subprocessManager.getFinishedSubprocessResults()
         utils.clearAndSetText(self._outputTerminal, err, clear=False, setTimestamp=True)
 
@@ -443,6 +449,7 @@ class VSPanelLayout(QVBoxLayout):
             self._presetManager.savePreset(self._data, filename=filename, isHistory=isHistory)
 
     def loadPreset(self):
+        """ Load preset """
         filename, _ = QFileDialog.getOpenFileName(self._parent, 'Video Output Location', "", ';;'.join(['*.json']))
         if filename:
             self._presetManager.loadPreset(preset=filename)

@@ -17,6 +17,7 @@ def evaluateVapourSynthOptions(data):
 
 
 def evaluateTrimOptions(trim):
+    """ Evaluate trim options """
     if not trim:
         return ''
 

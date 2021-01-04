@@ -109,6 +109,7 @@ class VideoPlayerWidget(QWidget):
         self._slider.setTickInterval(duration / 20)
 
     def _pauseIfPlaying(self):
+        """ Pause video if playing """
         if self._playButton.isChecked():
             self._playButton.toggle()
             self.toggleVideo()

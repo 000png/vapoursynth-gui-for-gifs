@@ -7,8 +7,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMessageBox, QHBoxLayout, QLabel, QWidget, \
     QStackedLayout, QPlainTextEdit, QPushButton, QLineEdit
 
-def generateMessageBox(message, icon=QMessageBox.Information, windowTitle="Info",
-                       buttons=QMessageBox.Ok):
+def generateMessageBox(message, icon=QMessageBox.Information, windowTitle="Info", buttons=QMessageBox.Ok):
     """ Generate message box """
     msgBox = QMessageBox()
     msgBox.setIcon(icon)

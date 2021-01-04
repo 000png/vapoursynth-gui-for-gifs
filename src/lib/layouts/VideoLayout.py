@@ -9,6 +9,7 @@ from lib.widgets.VideoPlayerWidget import VideoPlayerWidget
 class DualVideoLayout(QGridLayout):
     """ Dual video layout """
     def __init__(self, parent=None, filename=None, style=None):
+        """ Initializer """
         super().__init__()
         self._style = style
         self._originalFilename = filename
@@ -39,6 +40,7 @@ class DualVideoLayout(QGridLayout):
             self._renderVideo.loadVideoFile(filename)
 
     def clearVideo(self, videoType=None):
+        """ Clear video """
         if videoType not in [None, 'original', 'render']:
             raise ValueError(f'Unrecognized videoType {videoType}')
 
@@ -48,7 +50,7 @@ class DualVideoLayout(QGridLayout):
             self._renderVideo.clearVideo()
 
     def toggleVideo(self, videoType, forceClose=False, forceOpen=False):
-        """ Hide render """
+        """ Toggle video to be visible or not """
         if forceClose and forceOpen:
             raise ValueError('Both forceClose and forceOpen cannot be set to True')
 

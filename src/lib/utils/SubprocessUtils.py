@@ -4,8 +4,6 @@ Utils related to VapourSynth
 """
 import os
 import posixpath
-import subprocess
-import vapoursynth as vs
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)).replace(os.sep, posixpath.sep)
 WORK_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '../../../work')).replace(os.sep, posixpath.sep)
@@ -45,17 +43,3 @@ def renderVSVideo(script, inFilename, outFilename, extension):
         fh.write(cmd.replace('/', '\\'))
 
     return f'"{RENDER_BAT}"'
-
-
-def runSubprocess(cmd, errorMsg=None, withShell=False):
-    """ Run external process """
-    if not withShell and not isinstance(cmd, list):
-        cmd = cmd.split(' ')
-
-    if not errorMsg:
-        errorMsg = f"Command failed: {' '.join(cmd)}"
-
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=withShell)
-    out, err = p.communicate()
-
-    return p.returncode, out, err

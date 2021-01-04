@@ -33,9 +33,7 @@ class MainWindow(QMainWindow):
         self._generateWindow()
 
     def _generateLayout(self):
-        """
-        Generate the main layout
-        """
+        """ Generate the main layout """
         wid = QWidget(self)
         self.setCentralWidget(wid)
         layout = QGridLayout()
@@ -170,6 +168,7 @@ class MainWindow(QMainWindow):
         self._videoLayout.loadVideoFile(filename, videoType=videoType, forceLoad=True)
 
     def resizeEvent(self, event):
+        """ Resize event """
         self._loadingScreen.resize(event.size())
         event.accept()
 

@@ -21,9 +21,11 @@ class ScriptLayout(QGridLayout):
         self.addWidget(self.scriptEditor, 0, 0)
 
     def setText(self, text):
+        """ Set text """
         self.scriptEditor.insertPlainText(text)
 
     def copyText(self):
+        """ Copy text """
         self.scriptEditor.copy()
 
 
@@ -42,6 +44,7 @@ class ScriptEditor(QPlainTextEdit):
         videoData = data['video']
         plugins = '\n'.join(data['plugins'].values())
 
+        # source changes depending on type
         _, extension = os.path.splitext(videoData['filename'])
         if extension == '.mp4':
             sourceInput = f"video = core.ffms2.Source(source=r\"{videoData['filename']}\")"

@@ -19,6 +19,7 @@ class WaitingSpinnerOverlay(QWidget):
         palette.setColor(palette.Background, Qt.transparent)
         self.setPalette(palette)
 
+        # abort button to interrupt QProcess
         self._abortButton = QPushButton("Abort")
         self._abortButton.setMaximumWidth(75)
         layout = QVBoxLayout()
@@ -57,8 +58,10 @@ class WaitingSpinnerOverlay(QWidget):
         self.counter = 0
 
     def showTime(self):
+        """ Increment counter and call update on timer """
         self.counter +=1
         self.update()
 
     def hideEvent(self, event):
+        """ Hide event """
         self.timer.stop()
