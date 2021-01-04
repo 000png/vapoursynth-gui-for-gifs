@@ -4,11 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.0.2] - in progress
+## [v0.2.0] - in progress
 
 ### Added
 
 * Loading and saving of presets, and history preset loaded automatically
+* Can abort process
 * This `CHANGELOG.md`
 
 ### Changed
@@ -16,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Trimming now optional and done through VS, not ffmpeg
 * Resizing/cropping only rerenders resizer.webm if the video state has changed
 
-## [v0.0.1] - 2020-12-30
+## [v0.1.0] - 2020-12-30
 * [Associated PR](https://github.com/000png/vapoursynth-gui-for-gifs/pull/1)
 * [Associated Commit Hash](https://github.com/000png/vapoursynth-gui-for-gifs/commit/f74cc8dffebfafd3bc6a95b77101806aa9c6dc4c)
 * Initial project setup.

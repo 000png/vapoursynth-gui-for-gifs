@@ -21,13 +21,13 @@ class MainWindow(QMainWindow):
     """
     Main base layout for application
     """
-    def __init__(self):
+    def __init__(self, version):
         """ Initializer """
         super().__init__()
         self._originalToggled = True
         self._renderToggled = True
 
-        self.setWindowTitle("VapourSynth GUI for Gifs")
+        self.setWindowTitle(f"VapourSynth GUI for Gifs v{version}")
         self._generateLayout()
         self._generateActions()
         self._generateWindow()
