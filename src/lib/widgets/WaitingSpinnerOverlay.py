@@ -5,8 +5,7 @@ Adapted from https://wiki.python.org/moin/PyQt/A%20full%20widget%20waiting%20ind
 import math, sys
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QPalette, QPainter, QBrush, QColor, QPen
-from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QTextEdit, QGridLayout, \
-    QPushButton
+from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout
 
 
 class WaitingSpinnerOverlay(QWidget):
@@ -19,6 +18,18 @@ class WaitingSpinnerOverlay(QWidget):
         palette = QPalette(self.palette())
         palette.setColor(palette.Background, Qt.transparent)
         self.setPalette(palette)
+
+        self._abortButton = QPushButton("Abort")
+        self._abortButton.setMaximumWidth(75)
+        layout = QVBoxLayout()
+        layout.addSpacing(150)
+        layout.setAlignment(Qt.AlignHCenter)
+        layout.addWidget(self._abortButton)
+        self.setLayout(layout)
+
+    def setAbortFunction(self, function):
+        """ Set abort function """
+        self._abortButton.clicked.connect(function)
     
     def paintEvent(self, event):
         """ Paint event """

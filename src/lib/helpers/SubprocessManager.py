@@ -11,6 +11,7 @@ class SubprocessManager():
     def __init__(self, loadingScreen, outputTerminal):
         """ Initializer """
         self._loadingScreen = loadingScreen
+        self._loadingScreen.setAbortFunction(self.onAbort)
         self._outputTerminal = outputTerminal
 
     def setSubprocess(self, cmd, onFinish, nextCmd=None):
@@ -44,6 +45,12 @@ class SubprocessManager():
         """ Stream stdout """
         out = self._p.readAllStandardOutput().data().decode()
         clearAndSetText(self._outputTerminal, '\n' + out, clear=False, setTimestamp=True)
+
+    def onAbort(self):
+        """ On abort """
+        if self._p.state() != QProcess.NotRunning:
+            self._p.kill()
+            clearAndSetText(self._outputTerminal, 'Process aborted', clear=False, setTimestamp=True)
 
     def _prepOnFinish(self, onFinish):
         """ Stop loading screen and execute function """
