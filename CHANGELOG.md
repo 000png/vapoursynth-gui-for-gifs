@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Loading and saving of presets, and history preset loaded automatically
 * Can abort process
+* Video name labels
 * This `CHANGELOG.md`
 
 ### Changed

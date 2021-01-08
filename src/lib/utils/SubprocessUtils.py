@@ -12,6 +12,7 @@ VS_PIPE = os.path.join(BIN_DIR, 'VSPipe.exe').replace(os.sep, posixpath.sep)
 FFMPEG = os.path.join(BIN_DIR, 'ffmpeg/bin/ffmpeg.exe').replace(os.sep, posixpath.sep)
 TRIMMED_FILENAME = os.path.join(WORK_DIR, 'tmp.mp4').replace(os.sep, posixpath.sep)
 RENDER_BAT = os.path.join(WORK_DIR, 'render.bat').replace(os.sep, posixpath.sep)
+DURATION_BAT = os.path.join(WORK_DIR, 'duration.bat').replace(os.sep, posixpath.sep)
 
 def checkVSScript(filename):
     """ Verify given script is valid """
@@ -43,3 +44,12 @@ def renderVSVideo(script, inFilename, outFilename, extension):
         fh.write(cmd.replace('/', '\\'))
 
     return f'"{RENDER_BAT}"'
+
+
+def getVideoDuration(filename):
+    """ Get video duration """
+    cmd = f'"{FFMPEG}" -i {filename} 2>&1' + "| grep Duration | awk 'print $2}' | tr -d ,"
+    with open(DURATION_BAT, 'w') as fh:
+        fh.write(cmd.replace('/', '\\'))
+
+    return f'"{DURATION_BAT}"'

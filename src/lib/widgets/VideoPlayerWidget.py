@@ -72,6 +72,12 @@ class VideoPlayerWidget(QWidget):
         self._mediaPlayer.positionChanged.connect(self._positionChanged)
         self._mediaPlayer.durationChanged.connect(self._durationChanged)
 
+        # label; will show the video filepath
+        self._label = QLabel(self._filename)
+        self._label.setMaximumHeight(20)
+        self._label.setWordWrap(True)
+        self._label.setAlignment(Qt.AlignTop)
+
     def _generateLayout(self):
         """ Generate layout """
         # control panel
@@ -82,6 +88,7 @@ class VideoPlayerWidget(QWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self._videoWidget)
+        layout.addWidget(self._label)
         layout.addLayout(controlPanelLayout)
 
         self.setLayout(layout)
@@ -123,6 +130,7 @@ class VideoPlayerWidget(QWidget):
         self._playButton.setEnabled(True)
         self._playButton.toggle()
         self._filename = filename
+        self._label.setText(filename)
         self._mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(filename)))
         self.toggleVideo()
 
