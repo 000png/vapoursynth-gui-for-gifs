@@ -157,7 +157,7 @@
     <div id="container">
         <div id="target">
              <video id="video" autoplay loop muted>
-                <source src="../../work/resizer.webm" type="video/webm">
+                [REPLACE_RESIZE_VIDEO]
             </video>
         </div>
     </div>
@@ -181,11 +181,11 @@
             <label for="resizer" title="Descaling method">Scaling:</label>
             <!-- <label for="resizer"></label> -->
             <select id="resizer" onchange="output.resizer();">
-                <option value="debilinear" selected>debilinear</option>
+                <option value="debilinear">debilinear</option>
                 <option value="debicubic">debicubic</option>
                 <option value="delanczos">delanczos</option>
                 <option value="despline16">despline16</option>
-                <option value="despline36">despline36</option>
+                <option value="despline36" selected>despline36</option>
                 <option value="despline64">despline64</option>
             </select>
 

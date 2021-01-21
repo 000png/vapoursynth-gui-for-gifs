@@ -52,49 +52,35 @@ class VSPanelLayout(QVBoxLayout):
         """ Set the subprocess manager """
         self._subprocessManager = SubprocessManager(loadingScreen, self._outputTerminal)
 
+    def _generateComboBox(self, option, config, plugins, index=0, otherFuncToExecute=None):
+        """ Generate VSOptions dropdown combobox """
+        comboBox = QComboBox()
+        for item in config.keys():
+            comboBox.addItem(item)
+
+        comboBox.activated[str].connect(
+            lambda text: self._addVapourSynthOption(text, option, plugins, config, otherFuncToExecute))
+        comboBox.setCurrentIndex(index)
+
+        return comboBox
+
     def _generateVapourSynthOptions(self):
         """ Generate VapourSynth options """
-        # preprocessing
-        preprocessor = QComboBox()
-        for item in c.PREPROCESSOR_CONFIG.keys():
-            preprocessor.addItem(item)
-        preprocessor.activated[str].connect(
-            lambda text: self._addVapourSynthOption(text, 'preprocessor', c.PREPROCESSOR_PLUGINS, c.PREPROCESSOR_CONFIG))
-        preprocessor.setCurrentIndex(1)
-
         # denoising
-        denoise = QComboBox()
-        for item in c.DENOISE_CONFIG.keys():
-            denoise.addItem(item)
-        denoise.activated[str].connect(
-            lambda text: self._addVapourSynthOption(text, 'denoise', c.DENOISE_PLUGINS, c.DENOISE_CONFIG, self._setDenoiseLayout))
-
         self._knlmOptions = DenoiseOptionKNLM()
         self._bm3dOptions = DenoiseOptionBM3D()
 
         # sharpening
-        sharpen = QComboBox()
-        for item in c.SHARPEN_CONFIG.keys():
-            sharpen.addItem(item)
-        sharpen.activated[str].connect(
-            lambda text: self._addVapourSynthOption(text, 'sharpen', c.SHARPEN_PLUGINS, c.SHARPEN_CONFIG, self._setSharpenLayout))
-
         self._fineSharpOptions = FineSharpOptions()
 
         # trimming; this is actually to preprocess trimming with ffmpeg beforehand or not
-        trim = QComboBox()
-        for item in c.TRIM_CONFIG.keys():
-            trim.addItem(item)
-        trim.activated[str].connect(
-            lambda text: self._addVapourSynthOption(text, 'trim', c.TRIM_PLUGINS, c.TRIM_CONFIG, self._setTrimLayout))
-
         self._vsTrimOption = TrimOptions()
 
         self._dropdowns = {
-            'preprocessor': preprocessor,
-            'denoise': denoise,
-            'sharpen': sharpen,
-            'trim': trim
+            'preprocessor': self._generateComboBox('preprocessor', c.PREPROCESSOR_CONFIG, c.PREPROCESSOR_PLUGINS, index=1),
+            'denoise': self._generateComboBox('denoise', c.DENOISE_CONFIG, c.DENOISE_PLUGINS, otherFuncToExecute=self._setLayout),
+            'sharpen': self._generateComboBox('sharpen', c.SHARPEN_CONFIG, c.SHARPEN_PLUGINS, otherFuncToExecute=self._setLayout),
+            'trim': self._generateComboBox('trim', c.TRIM_CONFIG, c.TRIM_PLUGINS, otherFuncToExecute=self._setLayout)
         }
 
     def _addVapourSynthOption(self, text, key, vsPlugin, vsConfig, otherFuncToExecute=None):
@@ -108,28 +94,30 @@ class VSPanelLayout(QVBoxLayout):
             self._data['plugins'].update(vsPlugin)
 
         if otherFuncToExecute:
-            otherFuncToExecute(text)
+            otherFuncToExecute(text, key)
 
-    def _setDenoiseLayout(self, text):
+    def _setLayout(self, text, key):
         """ Set denoise layout, switch on stack """
-        self._knlmOptions.save(ignoreErrors=True)
-        self._bm3dOptions.save(ignoreErrors=True)
-        if text == 'None':
-            self._denoiseOptions.hide()
+        if key == 'denoise':
+            self._knlmOptions.save(ignoreErrors=True)
+            self._bm3dOptions.save(ignoreErrors=True)
+            options = self._denoiseOptions
+        elif key == 'sharpen':
+            self._fineSharpOptions.save(ignoreErrors=True)
+            options = self._sharpenOptions
+        elif key == 'trim':
+            self._vsTrimOption.save(ignoreErrors=True)
+            options = self._trimOptions
         else:
-            self._denoiseOptions.show()
-            self._stacks['denoise'].setCurrentWidget(self._knlmOptions) if text == 'KNLM' \
-                else self._stacks['denoise'].setCurrentWidget(self._bm3dOptions)
+            raise ValueError(f"Unrecognized key {key}")
 
-    def _setSharpenLayout(self, text):
-        """ Set sharpen layout """
-        self._fineSharpOptions.save(ignoreErrors=True)
-        self._sharpenOptions.hide() if text == 'None' else self._sharpenOptions.show()
-
-    def _setTrimLayout(self, text):
-        """ Set trim layout """
-        self._vsTrimOption.save(ignoreErrors=True)
-        self._trimOptions.hide() if text == 'None' else self._trimOptions.show()
+        if text == 'None':
+            options.hide()
+        else:
+            options.show()
+            if key == 'denoise':
+                self._stacks['denoise'].setCurrentWidget(self._knlmOptions) if text == 'KNLM' \
+                    else self._stacks['denoise'].setCurrentWidget(self._bm3dOptions)
 
     def _openOutputFileDialogue(self):
         """ Open file dialogue """
@@ -207,12 +195,15 @@ class VSPanelLayout(QVBoxLayout):
         self.addLayout(utils.generateRow(self._renderButton, self._renderAutoButton))
         self.addWidget(self._outputTerminal)
 
-    def _finishedOpenCropWindow(self):
+    def _finishedOpenCropWindow(self, useBrowserForResize = False):
         """ On finished rendering webm for html window """
-        result, out, err = self._subprocessManager.getFinishedSubprocessResults()
-        if result == 0:
-            self._resizeWindow = ResizeCropWindow(self._parent)
-            self._resizeWindow.show()
+        if not useBrowserForResize:
+            result, out, err = self._subprocessManager.getFinishedSubprocessResults()
+            if result == 0:
+                self._resizeWindow = ResizeCropWindow(self._parent)
+                self._resizeWindow.show()
+        else:
+            ResizeCropWindow.openInBrowser(self._data['video']['filename'])
 
     def openResizeCropWindow(self):
         """ Open resize crop window """
@@ -221,14 +212,14 @@ class VSPanelLayout(QVBoxLayout):
             return
 
         videoData = self._data['video']
-        if videoData['stateChanged']:
+        if videoData['stateChanged'] and not self._parent._useBrowserForResizer:
             self._subprocessManager.setSubprocess(trimVideo(videoData['filename'], '00:00:00', '00:01:00',
                 trimFilename=os.path.abspath(os.path.join(WORK_DIR, 'resizer.webm')),
                 trimArgs="-vcodec libvpx -acodec libvorbis -preset ultrafast"),
                 self._finishedOpenCropWindow)
             videoData['stateChanged'] = False
         else:
-            self._finishedOpenCropWindow()
+            self._finishedOpenCropWindow(self._parent._useBrowserForResizer)
 
     def _finishedCheckScriptOkay(self):
         """ On finished calling VSPipe to check if script is okay """
@@ -403,15 +394,14 @@ class VSPanelLayout(QVBoxLayout):
             if index >= 0:
                 self._dropdowns[item].setCurrentIndex(index)
                 if index > 0:
+                    if item != 'preprocessor':
+                        self._setLayout(value['type'], item)
                     if item == 'denoise':
-                        self._setDenoiseLayout(value['type'])
                         options = self._knlmOptions if value['type'] == 'KNLM' else self._bm3dOptions
                         options.loadArgs(value['args'])
                     elif item == 'sharpen':
-                        self._setSharpenLayout(value['type'])
                         self._fineSharpOptions.loadArgs(value['args'])
                     elif item == 'trim':
-                        self._setTrimLayout(value['type'])
                         self._vsTrimOption.loadArgs(value['args'])
 
         if 'video' in self._data:

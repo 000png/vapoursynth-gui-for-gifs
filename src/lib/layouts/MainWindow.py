@@ -26,6 +26,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self._originalToggled = True
         self._renderToggled = True
+        self._useBrowserForResizer = True
 
         self.setWindowTitle(f"VapourSynth GUI for Gifs v{version}")
         self._generateLayout()
@@ -99,6 +100,19 @@ class MainWindow(QMainWindow):
         self._loadPreset.setStatusTip('Load preset into editor')
         self._loadPreset.triggered.connect(lambda: self._vsPanelLayout.loadPreset())
 
+        # settings actions
+        self._useBrowserForResizerAction = QAction(self._toggledIcon, '&Use browser for resizer')
+        self._useBrowserForResizerAction.setStatusTip('Open up the resizer in the default browser')
+        self._useBrowserForResizerAction.triggered.connect(lambda: self._setBrowserResizer())
+
+    def _setBrowserResizer(self):
+        """ Set browser resizer """
+        self._useBrowserForResizer = not self._useBrowserForResizer
+        if self._useBrowserForResizer:
+            self._useBrowserForResizerAction.setIcon(self._toggledIcon)
+        else:
+            self._useBrowserForResizerAction.setIcon(self._notToggledIcon)
+
     def _generateWindow(self):
         """ Generate window """
         # make menu bar and add actions
@@ -116,6 +130,9 @@ class MainWindow(QMainWindow):
         editMenu = menuBar.addMenu('&View')
         editMenu.addAction(self._toggleOriginalVideo)
         editMenu.addAction(self._toggleRenderVideo)
+
+        settingsMenu = menuBar.addMenu('&Settings')
+        settingsMenu.addAction(self._useBrowserForResizerAction)
 
     def _saveScript(self):
         """ Save script """
