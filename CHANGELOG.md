@@ -8,13 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* Settings adjustments; allow users to specify the background ffmpeg commands
 * Ability to open resizer in default browser and toggle between that versus opening it up within the GUI
+* Settings adjustments; allow users to specify the background ffmpeg commands
 * Panel sizes now adjustable
 
 ### Changed
 
-* Refactored some code
+* Refactored a lot of the code, including:
+    * Extract ActionsManager for main window
+    * Modularize how dropdown VS options are handled
 * Set resizer descale default to Despline36
 
 ## [v0.2.0] - 2021-01-08
