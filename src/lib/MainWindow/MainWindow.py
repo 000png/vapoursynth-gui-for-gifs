@@ -9,11 +9,12 @@ from PyQt5.QtCore import QDir
 from PyQt5.QtWidgets import QMainWindow, QWidget, QGridLayout, QFileDialog
 
 import lib.utils.PyQtUtils as utils
-from lib.helpers.ActionsManager import ActionsManager
-from lib.layouts.VideoLayout import DualVideoLayout
-from lib.layouts.ScriptLayout import ScriptLayout
-from lib.layouts.VSPanelLayout import VSPanelLayout
-from lib.widgets.WaitingSpinnerOverlay import WaitingSpinnerOverlay
+from .ActionsManager import ActionsManager
+from .WaitingSpinnerOverlay import WaitingSpinnerOverlay
+
+from lib.ScriptPanel.ScriptLayout import ScriptLayout
+from lib.VideoPanel.VideoLayout import DualVideoLayout
+from lib.VSPanel.VSPanelLayout import VSPanelLayout
 
 
 class MainWindow(QMainWindow):
@@ -70,7 +71,7 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(self._actionsManager.makeAction('exit', self._exitCall))
 
         editMenu = menuBar.addMenu('&Edit')
-        editMenu.addAction(self._actionsManager.makeAction('resizer', self._vsPanelLayout.openResizeCropWindow))
+        editMenu.addAction(self._actionsManager.makeAction('resizer', self._vsPanelLayout.openResizer))
 
         editMenu = menuBar.addMenu('&View')
         editMenu.addAction(self._actionsManager.makeAction('toggle_original_video',

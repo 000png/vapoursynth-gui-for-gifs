@@ -3,7 +3,7 @@
 Layout containing two videos
 """
 from PyQt5.QtWidgets import QGridLayout
-from lib.widgets.VideoPlayerWidget import VideoPlayerWidget
+from .VideoPlayerWidget import VideoPlayerWidget
 
 
 class DualVideoLayout(QGridLayout):

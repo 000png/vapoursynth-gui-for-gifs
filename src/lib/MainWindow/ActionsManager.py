@@ -2,8 +2,8 @@
 """
 Actions/menu manager for the MainWindow's menu bar.
 """
-from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QStyle
 
 

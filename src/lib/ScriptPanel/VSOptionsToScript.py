@@ -3,7 +3,7 @@
 Evaluate vs options from data
 """
 
-def evaluateVapourSynthOptions(data):
+def vsOptionsToScript(data):
     """ Evaluate VapourSynth options """
     script = evaluateTrimOptions(data.get('trim', None))
     script += evaluatePreprocessorOptions(data.get('preprocessor', None))

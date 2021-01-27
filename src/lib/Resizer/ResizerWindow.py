@@ -11,17 +11,17 @@ from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QAction, \
     QFileDialog, QMessageBox, QStyle
 
-SCRIPT_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-HTML_RESIZER_BASE_SCRIPT = os.path.abspath(os.path.join(SCRIPT_DIR, '..\\..\\html\\resizer.html'))
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+HTML_RESIZER_BASE_SCRIPT = os.path.join(SCRIPT_DIR, 'resizer.html')
 
-HTML_RESIZER_SCRIPT = os.path.abspath(os.path.join(SCRIPT_DIR, '..\\..\\..\\work\\resizer.html'))
-BROWSER_VIDEO = os.path.abspath(os.path.join(SCRIPT_DIR, '..\\..\\..\\work\\resizer.'))
+WORK_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '../../../work'))
+HTML_RESIZER_SCRIPT = os.path.join(WORK_DIR, 'resizer.html')
 
-class ResizeCropWindow(QMainWindow):
+class ResizerWindow(QMainWindow):
     """ Resize and cropping window """
     def __init__(self, parent=None):
         """ Initializer """
-        super(ResizeCropWindow, self).__init__(parent)
+        super(ResizerWindow, self).__init__(parent)
         self.resize(900, 700)
         self.setWindowTitle("Resize & Crop")
         self._generateLayout()

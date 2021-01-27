@@ -3,7 +3,7 @@ import sys
 sys.path.append('.')
 
 from PyQt5.QtWidgets import QApplication
-from lib.layouts.MainWindow import MainWindow
+from lib.MainWindow.MainWindow import MainWindow
 from version import MODULE_VERSION
 
 

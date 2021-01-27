@@ -4,24 +4,24 @@ Layout containing options for Vapoursynth
 """
 import os
 import re
-import time
 import posixpath
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QPushButton, QComboBox, QLabel, QVBoxLayout, QMessageBox, \
     QPlainTextEdit, QFileDialog, QStackedLayout, QStyle
 
 import lib.utils.PyQtUtils as utils
-import lib.utils.VSConstants as c
+from lib.Resizer.ResizerWindow import ResizerWindow
+from lib.utils.SubprocessManager import SubprocessManager
 from lib.utils.SubprocessUtils import checkVSScript, renderVSVideo, trimVideo, TRIMMED_FILENAME
-from lib.widgets.OptionsVS import DenoiseOptionKNLM, DenoiseOptionBM3D, FineSharpOptions, TrimOptions
-from lib.layouts.ResizeCropWindow import ResizeCropWindow
-from lib.helpers.SubprocessManager import SubprocessManager
-from lib.helpers.PresetManager import PresetManager
+
+from . import VSConstants as c
+from .PresetManager import PresetManager
+from .OptionsVS import DenoiseOptionKNLM, DenoiseOptionBM3D, FineSharpOptions, TrimOptions
 
 CWD = os.getcwd()
-SCRIPT_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__))).replace(os.sep, posixpath.sep)
-WORK_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..\\..\\..\\work')).replace(os.sep, posixpath.sep)
-TMP_VS_SCRIPT = os.path.abspath(os.path.join(WORK_DIR, 'tmp.vpy')).replace(os.sep, posixpath.sep)
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+WORK_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '../../../work'))
+TMP_VS_SCRIPT = os.path.join(WORK_DIR, 'tmp.vpy')
 
 NO_VIDEO_LOADED_SCRIPT = 'A video must be loaded before the script can be generated and validated'
 
@@ -134,7 +134,7 @@ class VSPanelLayout(QVBoxLayout):
         self._outputFileButton.clicked.connect(self._openOutputFileDialogue)
 
         self._resizeCropButton = QPushButton("Resize And Crop")
-        self._resizeCropButton.clicked.connect(self.openResizeCropWindow)
+        self._resizeCropButton.clicked.connect(self.openResizer)
 
         self._resizeCropText = QPlainTextEdit()
         self._resizeCropText.setPlaceholderText("copy & paste output from the resize/crop window here")
@@ -200,12 +200,12 @@ class VSPanelLayout(QVBoxLayout):
         if not useBrowserForResize:
             result, out, err = self._subprocessManager.getFinishedSubprocessResults()
             if result == 0:
-                self._resizeWindow = ResizeCropWindow(self._parent)
+                self._resizeWindow = ResizerWindow(self._parent)
                 self._resizeWindow.show()
         else:
-            ResizeCropWindow.openInBrowser(self._data['video']['filename'])
+            ResizerWindow.openInBrowser(self._data['video']['filename'])
 
-    def openResizeCropWindow(self):
+    def openResizer(self):
         """ Open resize crop window """
         if 'video' not in self._data:
             utils.clearAndSetText(self._outputTerminal, "A video must be loaded in order to crop/resize it", clear=False, setTimestamp=True)

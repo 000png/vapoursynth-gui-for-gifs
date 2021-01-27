@@ -3,10 +3,10 @@
 Layout containing generated script
 """
 import os
-from PyQt5.QtWidgets import QGridLayout, QPushButton, QPlainTextEdit, QWidget
 from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QGridLayout, QPlainTextEdit, QWidget
 
-from lib.utils.VSEvaluateOptions import evaluateVapourSynthOptions
+from .VSOptionsToScript import vsOptionsToScript
 
 
 class ScriptLayout(QGridLayout):
@@ -64,7 +64,7 @@ core = vs.get_core()
 {sourceInput}
 """
         # add options
-        script += evaluateVapourSynthOptions(data)
+        script += vsOptionsToScript(data)
 
         # add output information
         script += f"""

@@ -3,12 +3,11 @@
 Video player widget; along with the video itself, contains the pause/play button
 and slider.
 """
-from PyQt5.QtCore import QDir, Qt, QUrl
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSlider, QStyle, \
-    QLabel
-from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
+from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtMultimediaWidgets import QVideoWidget
-from PyQt5.QtGui import QIcon
+from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSlider, \
+    QStyle, QLabel
 
 
 class VideoPlayerWidget(QWidget):

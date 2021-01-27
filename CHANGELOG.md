@@ -14,8 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* Refactored a lot of the code, including:
-    * Extract ActionsManager for main window
+* Heavy refactoring, namely:
+    * Reorganized source code; rather than split by class type, split by panel function since each panel is pretty self-contained and do not really interact outside of communication between layouts from the MainWindow
+    * Extract ActionsManager for MainWindow
     * Modularize how dropdown VS options are handled
 * Set resizer descale default to Despline36
 
