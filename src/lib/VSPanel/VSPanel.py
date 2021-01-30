@@ -200,15 +200,12 @@ class VSPanelFrame(QFrame):
         self.setLayout(layout)
         self.setFrameShape(QFrame.StyledPanel)
 
-    def _finishedOpenCropWindow(self, useBrowserForResize = False):
+    def _finishedOpenCropWindow(self):
         """ On finished rendering webm for html window """
-        if not useBrowserForResize:
-            result, out, err = self._subprocessManager.getFinishedSubprocessResults()
-            if result == 0:
-                self._resizeWindow = ResizerWindow(self._parent)
-                self._resizeWindow.show()
-        else:
-            ResizerWindow.openInBrowser(self._data['video']['filename'])
+        result, out, err = self._subprocessManager.getFinishedSubprocessResults()
+        if result == 0:
+            self._resizeWindow = ResizerWindow(self._parent)
+            self._resizeWindow.show()
 
     def openResizer(self):
         """ Open resize crop window """
@@ -217,14 +214,14 @@ class VSPanelFrame(QFrame):
             return
 
         videoData = self._data['video']
-        if videoData['stateChanged'] and not self._parent._useBrowserForResizer:
+        if videoData['stateChanged'] and not self._parent.isBrowserResizerToggled():
             self._subprocessManager.setSubprocess(trimVideo(videoData['filename'], '00:00:00', '00:01:00',
                 trimFilename=os.path.abspath(os.path.join(WORK_DIR, 'resizer.webm')),
                 trimArgs="-vcodec libvpx -acodec libvorbis -preset ultrafast"),
                 self._finishedOpenCropWindow)
             videoData['stateChanged'] = False
         else:
-            self._finishedOpenCropWindow(self._parent._useBrowserForResizer)
+            ResizerWindow.openInBrowser(self._data['video']['filename'])
 
     def _finishedCheckScriptOkay(self):
         """ On finished calling VSPipe to check if script is okay """

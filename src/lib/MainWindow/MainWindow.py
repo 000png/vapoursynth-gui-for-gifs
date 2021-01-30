@@ -13,8 +13,10 @@ from .ActionsManager import ActionsManager
 from .WaitingSpinnerOverlay import WaitingSpinnerOverlay
 
 from lib.ScriptPanel.ScriptPanel import ScriptFrame
-from lib.VideoPanel.VideoPanel import DualVideoFrame
+from lib.VideoPanel.VideoPanel import DualVideoFrame, TOGGLE_ORIGINAL_VIDEO, TOGGLE_RENDER_VIDEO
 from lib.VSPanel.VSPanel import VSPanelFrame
+
+TOGGLE_BROWSER_RESIZER = 'toggle_browser_resizer'
 
 
 class MainWindow(QMainWindow):
@@ -24,13 +26,9 @@ class MainWindow(QMainWindow):
     def __init__(self, version):
         """ Initializer """
         super().__init__()
-        self._originalToggled = True
-        self._renderToggled = True
-        self._useBrowserForResizer = True
-
         self.setWindowTitle(f"VapourSynth GUI for Gifs v{version}")
         self._generateLayout()
-        self._generateWindow()
+        self._generateActionsBar()
 
     def _generateLayout(self):
         """ Generate the main layout """
@@ -62,7 +60,7 @@ class MainWindow(QMainWindow):
         self._loadingScreen.hide()
         self._vsPanelFrame.setSubprocessManager(self._loadingScreen)
 
-    def _generateWindow(self):
+    def _generateActionsBar(self):
         """ Generate window """
         # make menu bar and add actions
         self._actionsManager = ActionsManager(self)
@@ -80,19 +78,14 @@ class MainWindow(QMainWindow):
         editMenu.addAction(self._actionsManager.makeAction('resizer', self._vsPanelFrame.openResizer))
 
         editMenu = menuBar.addMenu('&View')
-        editMenu.addAction(self._actionsManager.makeAction('toggle_original_video',
-                           lambda: self._toggleVideo('original')))
-        editMenu.addAction(self._actionsManager.makeAction('toggle_render_video',
-                           lambda: self._toggleVideo('render')))
+        editMenu.addAction(self._actionsManager.makeAction(TOGGLE_ORIGINAL_VIDEO,
+                           lambda: self._toggleAction(TOGGLE_ORIGINAL_VIDEO)))
+        editMenu.addAction(self._actionsManager.makeAction(TOGGLE_RENDER_VIDEO,
+                           lambda: self._toggleAction(TOGGLE_RENDER_VIDEO)))
 
         settingsMenu = menuBar.addMenu('&Settings')
-        settingsMenu.addAction(self._actionsManager.makeAction('toggle_browser_resizer',
-                               self._setBrowserResizer))
-
-    def _setBrowserResizer(self):
-        """ Set browser resizer """
-        self._useBrowserForResizer = not self._useBrowserForResizer
-        self._actionsManager.setToggleIcon('toggle_browser_resizer', self._useBrowserForResizer)
+        settingsMenu.addAction(self._actionsManager.makeAction(TOGGLE_BROWSER_RESIZER,
+                               lambda: self._toggleAction(TOGGLE_BROWSER_RESIZER)))
 
     def _saveScript(self):
         """ Save script """
@@ -106,18 +99,11 @@ class MainWindow(QMainWindow):
             self._videoFrame.loadVideoFile(filename)
             self._vsPanelFrame.setVideo(filename)
 
-    def _toggleVideo(self, videoType):
+    def _toggleAction(self, toggleName):
         """ Toggle a video to show/hide """
-        if videoType == 'original':
-            self._originalToggled = not self._originalToggled
-            self._actionsManager.setToggleIcon('toggle_original_video', self._originalToggled)
-        elif videoType == 'render':
-            self._renderToggled = not self._renderToggled
-            self._actionsManager.setToggleIcon('toggle_render_video', self._renderToggled)
-        else:
-            raise ValueError(f"Unrecognized video type {videoType}")
-
-        self._videoFrame.toggleVideo(videoType=videoType)
+        self._actionsManager.toggleAction(toggleName)
+        if toggleName in [TOGGLE_ORIGINAL_VIDEO, TOGGLE_RENDER_VIDEO]:
+            self._videoFrame.toggleVideo(videoType=toggleName)
 
     def _exitCall(self):
         """ Exit the application """
@@ -144,3 +130,5 @@ class MainWindow(QMainWindow):
         self._vsPanelFrame.savePreset(isHistory=True)
         event.accept()
         
+    def isBrowserResizerToggled(self):
+        return self._actionsManager.isActionToggled(TOGGLE_BROWSER_RESIZER)

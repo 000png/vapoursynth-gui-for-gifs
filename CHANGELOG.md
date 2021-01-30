@@ -9,14 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * Ability to open resizer in default browser and toggle between that versus opening it up within the GUI
-* Settings adjustments; allow users to specify the background ffmpeg commands
-* Panel sizes now adjustable
+* Panel sizes are now adjustable
 
 ### Changed
 
 * Heavy refactoring, namely:
     * Reorganized source code; rather than split by class type, split by panel function since each panel is pretty self-contained and do not really interact outside of communication between layouts from the MainWindow
-    * Extract ActionsManager for MainWindow
+    * Extract `ActionsManager` for `MainWindow`
+        * This also handles global settings now
     * Modularize how dropdown VS options are handled
 * Set resizer descale default to Despline36
 

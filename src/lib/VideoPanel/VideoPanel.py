@@ -6,6 +6,8 @@ from PyQt5.Qt import QMargins
 from PyQt5.QtWidgets import QGridLayout, QFrame
 from .VideoPlayerWidget import VideoPlayerWidget
 
+TOGGLE_ORIGINAL_VIDEO = 'toggle_original_video'
+TOGGLE_RENDER_VIDEO = 'toggle_render_video'
 
 class DualVideoFrame(QFrame):
     """ Dual video layout """
@@ -34,24 +36,24 @@ class DualVideoFrame(QFrame):
 
     def loadVideoFile(self, filename, videoType=None, forceLoad=False):
         """ Load video file """
-        if videoType not in [None, 'original', 'render']:
+        if videoType not in [None, TOGGLE_ORIGINAL_VIDEO, TOGGLE_RENDER_VIDEO]:
             raise ValueError(f'Unrecognized videoType {videoType}')
 
         self.clearVideo(videoType)
 
-        if (not videoType or videoType == 'original') and (self._originalVideo.isVisible() or forceLoad):
+        if (not videoType or videoType == TOGGLE_ORIGINAL_VIDEO) and (self._originalVideo.isVisible() or forceLoad):
             self._originalVideo.loadVideoFile(filename)
-        if (not videoType or videoType == 'render') and (self._renderVideo.isVisible() or forceLoad):
+        if (not videoType or videoType == TOGGLE_RENDER_VIDEO) and (self._renderVideo.isVisible() or forceLoad):
             self._renderVideo.loadVideoFile(filename)
 
     def clearVideo(self, videoType=None):
         """ Clear video """
-        if videoType not in [None, 'original', 'render']:
+        if videoType not in [None, TOGGLE_ORIGINAL_VIDEO, TOGGLE_RENDER_VIDEO]:
             raise ValueError(f'Unrecognized videoType {videoType}')
 
-        if (not videoType or videoType == 'original'):
+        if (not videoType or videoType == TOGGLE_ORIGINAL_VIDEO):
             self._originalVideo.clearVideo()
-        if (not videoType or videoType == 'render'):
+        if (not videoType or videoType == TOGGLE_RENDER_VIDEO):
             self._renderVideo.clearVideo()
 
     def toggleVideo(self, videoType, forceClose=False, forceOpen=False):
@@ -59,10 +61,10 @@ class DualVideoFrame(QFrame):
         if forceClose and forceOpen:
             raise ValueError('Both forceClose and forceOpen cannot be set to True')
 
-        if videoType not in ['original', 'render']:
+        if videoType not in [TOGGLE_ORIGINAL_VIDEO, TOGGLE_RENDER_VIDEO]:
             raise ValueError(f'Unrecognized videoType {videoType}')
 
-        if videoType == 'original':
+        if videoType == TOGGLE_ORIGINAL_VIDEO:
             video = self._originalVideo
             filename = self._originalFilename
         else:

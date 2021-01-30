@@ -23,7 +23,7 @@ class ActionsManager():
         }
         self._toggles = {}
 
-    def _makeGenericAction(self, connect, title, icon, statusTip=None, shortcut=None, actionName=None):
+    def _makeGenericAction(self, connect, title, icon, statusTip=None, shortcut=None, toggleActionName=None):
         """ Make generic action """
         action = QAction(icon, title, self.mainWindow)
         action.triggered.connect(connect)
@@ -32,9 +32,16 @@ class ActionsManager():
             action.setShortcut(shortcut)
         if statusTip:
             action.setStatusTip(statusTip)
-        if actionName:
-            self._toggles[actionName] = action
 
+        return action
+
+    def _makeToggleAction(self, connect, title, icon, toggleActioName, statusTip=None, shortcut=None, startTriggered=True):
+        """ Make toggle action """
+        action = self._makeGenericAction(connect, title, icon, statusTip, shortcut)
+        action.setCheckable(True)
+        action.setChecked(startTriggered)
+
+        self._toggles[toggleActioName] = action
         return action
 
     def makeAction(self, actionName, connect):
@@ -52,24 +59,30 @@ class ActionsManager():
         elif actionName == 'resizer':
             return self._makeGenericAction(connect, '&Resize and crop', self._icons['open'], 'Resize and crop video', 'Ctrl+R')
         elif actionName == 'toggle_original_video':
-            return self._makeGenericAction(connect, '&Toggle original video', self._icons['toggled'],
-                                       'Toggle showing the original video in the editor',
-                                       actionName=actionName)
+            return self._makeToggleAction(connect, '&Toggle original video', self._icons['toggled'], actionName,
+                                          'Toggle showing the original video in the editor')
         elif actionName == 'toggle_render_video':
-            return self._makeGenericAction(connect, '&Toggle render video', self._icons['toggled'],
-                                       'Toggle showing the render video in the editor',
-                                       actionName=actionName)
+            return self._makeToggleAction(connect, '&Toggle render video', self._icons['toggled'], actionName,
+                                          'Toggle showing the render video in the editor')
         elif actionName == 'toggle_browser_resizer':
-            return self._makeGenericAction(connect, '&Use browser for resizer', self._icons['toggled'],
-                                       'Open up the resizer in the default browser',
-                                       actionName=actionName)
+            return self._makeToggleAction(connect, '&Use browser for resizer', self._icons['toggled'], actionName,
+                                          'Open up the resizer in the default browser')
         else:
             raise ValueError(f"Unrecognized action name {actionName}")
 
-    def setToggleIcon(self, actionName, result):
+    def toggleAction(self, actionName):
         """ Toggle icon on action """
         if actionName not in self._toggles:
             raise ValueError(f"Action {actionName} not found; may need to create action first")
 
-        iconKey = 'toggled' if result else 'notToggled'
-        self._toggles[actionName].setIcon(self._icons[iconKey])
+        toggle = self._toggles[actionName]
+        iconKey = 'toggled' if toggle.isChecked() else 'notToggled'
+        toggle.setIcon(self._icons[iconKey])
+
+        return toggle.isChecked()
+
+    def isActionToggled(self, actionName):
+        """ Returns whether or not an action is toggled """
+        if actionName not in self._toggles:
+            raise ValueError(f"Action {actionName} not found; may need to create action first")
+        return self._toggles[actionName].isChecked()
