@@ -4,12 +4,12 @@ Layout containing generated script
 """
 import os
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QGridLayout, QPlainTextEdit, QWidget
+from PyQt5.QtWidgets import QGridLayout, QPlainTextEdit, QWidget, QFrame
 
 from .VSOptionsToScript import vsOptionsToScript
 
 
-class ScriptLayout(QGridLayout):
+class ScriptFrame(QFrame):
     def __init__(self, parent=None):
         """ Initializer """
         super().__init__(parent)
@@ -17,8 +17,12 @@ class ScriptLayout(QGridLayout):
 
     def _generateLayout(self):
         """ Generate layout """
+        layout = QGridLayout(self)
         self.scriptEditor = ScriptEditor()
-        self.addWidget(self.scriptEditor, 0, 0)
+        layout.addWidget(self.scriptEditor, 0, 0)
+
+        self.setLayout(layout)
+        self.setFrameShape(QFrame.StyledPanel)
 
     def setText(self, text):
         """ Set text """
@@ -36,7 +40,6 @@ class ScriptEditor(QPlainTextEdit):
 
         self.setPlaceholderText('The generated script will appear here')
         self.setFont(QFont("Courier", 10))
-        self.setMaximumHeight(250)
 
     def toScript(self, data):
         """ Generate script """

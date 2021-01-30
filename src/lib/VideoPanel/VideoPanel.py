@@ -2,11 +2,12 @@
 """
 Layout containing two videos
 """
-from PyQt5.QtWidgets import QGridLayout
+from PyQt5.Qt import QMargins
+from PyQt5.QtWidgets import QGridLayout, QFrame
 from .VideoPlayerWidget import VideoPlayerWidget
 
 
-class DualVideoLayout(QGridLayout):
+class DualVideoFrame(QFrame):
     """ Dual video layout """
     def __init__(self, parent=None, filename=None, style=None):
         """ Initializer """
@@ -24,8 +25,12 @@ class DualVideoLayout(QGridLayout):
 
     def _generateLayout(self):
         """ Generate layout """
-        self.addWidget(self._originalVideo, 0, 0)
-        self.addWidget(self._renderVideo, 0, 1)
+        layout = QGridLayout(self)
+        layout.addWidget(self._originalVideo, 0, 0)
+        layout.addWidget(self._renderVideo, 0, 1)
+
+        self.setLayout(layout)
+        self.setFrameShape(QFrame.StyledPanel)
 
     def loadVideoFile(self, filename, videoType=None, forceLoad=False):
         """ Load video file """

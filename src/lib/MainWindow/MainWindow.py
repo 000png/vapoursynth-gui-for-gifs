@@ -5,16 +5,16 @@ Main base layout for application
 import os
 import sys
 import posixpath
-from PyQt5.QtCore import QDir
-from PyQt5.QtWidgets import QMainWindow, QWidget, QGridLayout, QFileDialog
+from PyQt5.QtCore import QDir, Qt
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QFileDialog, QSplitter
 
 import lib.utils.PyQtUtils as utils
 from .ActionsManager import ActionsManager
 from .WaitingSpinnerOverlay import WaitingSpinnerOverlay
 
-from lib.ScriptPanel.ScriptLayout import ScriptLayout
-from lib.VideoPanel.VideoLayout import DualVideoLayout
-from lib.VSPanel.VSPanelLayout import VSPanelLayout
+from lib.ScriptPanel.ScriptPanel import ScriptFrame
+from lib.VideoPanel.VideoPanel import DualVideoFrame
+from lib.VSPanel.VSPanel import VSPanelFrame
 
 
 class MainWindow(QMainWindow):
@@ -36,25 +36,31 @@ class MainWindow(QMainWindow):
         """ Generate the main layout """
         wid = QWidget(self)
         self.setCentralWidget(wid)
-        layout = QGridLayout()
+        layout = QHBoxLayout()
 
-        self._videoLayout = DualVideoLayout(style=self.style())
-        self._scriptLayout = ScriptLayout()
-        vsWidget = QWidget()
-        self._vsPanelLayout = VSPanelLayout(scriptEditor=self._scriptLayout.scriptEditor, parent=self)
-        vsWidget.setLayout(self._vsPanelLayout)
-        vsWidget.setMaximumWidth(375)
-        self._vsPanelLayout.setContentsMargins(0, 0, 0, 0)
+        self._videoFrame = DualVideoFrame(style=self.style())
+        self._scriptFrame = ScriptFrame()
+        self._vsPanelFrame = VSPanelFrame(scriptEditor=self._scriptFrame.scriptEditor, parent=self)
 
-        layout.addLayout(self._videoLayout, 0, 0)
-        layout.addLayout(self._scriptLayout, 1, 0)
-        layout.addWidget(vsWidget, 0, 1, 0, 1)
+        vsplitter = QSplitter(Qt.Vertical)
+        vsplitter.addWidget(self._videoFrame)
+        vsplitter.addWidget(self._scriptFrame)
 
+        windowHeight = self.frameGeometry().height()
+        windowWidth = self.frameGeometry().width()
+        vsplitter.setSizes([int(windowHeight * 0.65), int(windowHeight * 0.35)])
+
+        hsplitter = QSplitter(Qt.Horizontal)
+        hsplitter.addWidget(vsplitter)
+        hsplitter.addWidget(self._vsPanelFrame)
+        hsplitter.setSizes([int(windowWidth * 0.85), int(windowWidth * 0.15)])
+
+        layout.addWidget(hsplitter)
         wid.setLayout(layout)
 
         self._loadingScreen = WaitingSpinnerOverlay(self.centralWidget())
         self._loadingScreen.hide()
-        self._vsPanelLayout.setSubprocessManager(self._loadingScreen)
+        self._vsPanelFrame.setSubprocessManager(self._loadingScreen)
 
     def _generateWindow(self):
         """ Generate window """
@@ -64,14 +70,14 @@ class MainWindow(QMainWindow):
 
         fileMenu = menuBar.addMenu('&File')
         fileMenu.addAction(self._actionsManager.makeAction('open_video', self._openFile))
-        fileMenu.addAction(self._actionsManager.makeAction('load_preset', self._vsPanelLayout.loadPreset))
-        fileMenu.addAction(self._actionsManager.makeAction('save_preset', self._vsPanelLayout.savePreset))
+        fileMenu.addAction(self._actionsManager.makeAction('load_preset', self._vsPanelFrame.loadPreset))
+        fileMenu.addAction(self._actionsManager.makeAction('save_preset', self._vsPanelFrame.savePreset))
 
         fileMenu.addAction(self._actionsManager.makeAction('save_script', self._saveScript))
         fileMenu.addAction(self._actionsManager.makeAction('exit', self._exitCall))
 
         editMenu = menuBar.addMenu('&Edit')
-        editMenu.addAction(self._actionsManager.makeAction('resizer', self._vsPanelLayout.openResizer))
+        editMenu.addAction(self._actionsManager.makeAction('resizer', self._vsPanelFrame.openResizer))
 
         editMenu = menuBar.addMenu('&View')
         editMenu.addAction(self._actionsManager.makeAction('toggle_original_video',
@@ -90,15 +96,15 @@ class MainWindow(QMainWindow):
 
     def _saveScript(self):
         """ Save script """
-        self._vsPanelLayout.saveScriptToFile()
+        self._vsPanelFrame.saveScriptToFile()
 
     def _openFile(self):
         """ Open a file and populate the video layout """
         filename, _ = QFileDialog.getOpenFileName(self, "Open Video", QDir.homePath())
 
         if filename:
-            self._videoLayout.loadVideoFile(filename)
-            self._vsPanelLayout.setVideo(filename)
+            self._videoFrame.loadVideoFile(filename)
+            self._vsPanelFrame.setVideo(filename)
 
     def _toggleVideo(self, videoType):
         """ Toggle a video to show/hide """
@@ -111,7 +117,7 @@ class MainWindow(QMainWindow):
         else:
             raise ValueError(f"Unrecognized video type {videoType}")
 
-        self._videoLayout.toggleVideo(videoType=videoType)
+        self._videoFrame.toggleVideo(videoType=videoType)
 
     def _exitCall(self):
         """ Exit the application """
@@ -126,7 +132,7 @@ class MainWindow(QMainWindow):
             if extension == '.png':
                 return
 
-        self._videoLayout.loadVideoFile(filename, videoType=videoType, forceLoad=True)
+        self._videoFrame.loadVideoFile(filename, videoType=videoType, forceLoad=True)
 
     def resizeEvent(self, event):
         """ Resize event """
@@ -135,6 +141,6 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         """ Save history if save history is toggled """
-        self._vsPanelLayout.savePreset(isHistory=True)
+        self._vsPanelFrame.savePreset(isHistory=True)
         event.accept()
         

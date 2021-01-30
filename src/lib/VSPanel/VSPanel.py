@@ -7,7 +7,7 @@ import re
 import posixpath
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QPushButton, QComboBox, QLabel, QVBoxLayout, QMessageBox, \
-    QPlainTextEdit, QFileDialog, QStackedLayout, QStyle
+    QPlainTextEdit, QFileDialog, QStackedLayout, QStyle, QFrame
 
 import lib.utils.PyQtUtils as utils
 from lib.Resizer.ResizerWindow import ResizerWindow
@@ -26,7 +26,7 @@ TMP_VS_SCRIPT = os.path.join(WORK_DIR, 'tmp.vpy')
 NO_VIDEO_LOADED_SCRIPT = 'A video must be loaded before the script can be generated and validated'
 
 
-class VSPanelLayout(QVBoxLayout):
+class VSPanelFrame(QFrame):
     """
     Main base layout for application
     """
@@ -157,32 +157,34 @@ class VSPanelLayout(QVBoxLayout):
 
     def _generateLayout(self):
         """ Generate layout """
+        layout = QVBoxLayout(self)
+
         outputRow = QWidget()
         outputRow.setLayout(utils.generateRow('Output:', [self._outputFileText, self._outputFileButton]))
-        self.addWidget(outputRow)
+        layout.addWidget(outputRow)
 
         # stack trim options
-        self.addLayout(utils.generateRow('Apply trimming:', self._dropdowns['trim']))
+        layout.addLayout(utils.generateRow('Apply trimming:', self._dropdowns['trim']))
         self._trimOptions, trimStack = utils.generateStackedWidget([self._vsTrimOption])
-        self.addWidget(self._trimOptions)
+        layout.addWidget(self._trimOptions)
         self._trimOptions.hide()
 
-        self.addWidget(self._resizeCropButton)
-        self.addWidget(self._resizeCropText)
-        self.addLayout(utils.generateRow("Preprocessor:", self._dropdowns['preprocessor']))
+        layout.addWidget(self._resizeCropButton)
+        layout.addWidget(self._resizeCropText)
+        layout.addLayout(utils.generateRow("Preprocessor:", self._dropdowns['preprocessor']))
 
         # stack denoise options
-        self.addLayout(utils.generateRow('Denoise', self._dropdowns['denoise']))
+        layout.addLayout(utils.generateRow('Denoise', self._dropdowns['denoise']))
         self._denoiseOptions, denoiseStack = utils.generateStackedWidget(
             [self._knlmOptions, self._bm3dOptions])
-        self.addWidget(self._denoiseOptions)
+        layout.addWidget(self._denoiseOptions)
         self._denoiseOptions.hide()
 
         # stack sharpen options
-        self.addLayout(utils.generateRow("Sharpen", self._dropdowns['sharpen']))
+        layout.addLayout(utils.generateRow("Sharpen", self._dropdowns['sharpen']))
         self._sharpenOptions, sharpenStack = utils.generateStackedWidget(
             [self._fineSharpOptions])
-        self.addWidget(self._sharpenOptions)
+        layout.addWidget(self._sharpenOptions)
         self._sharpenOptions.hide()
 
         self._stacks = {
@@ -191,9 +193,12 @@ class VSPanelLayout(QVBoxLayout):
             'trim': trimStack
         }
 
-        self.addLayout(utils.generateRow(self._checkVSScriptButton, self._generateScriptButton))
-        self.addLayout(utils.generateRow(self._renderButton, self._renderAutoButton))
-        self.addWidget(self._outputTerminal)
+        layout.addLayout(utils.generateRow(self._checkVSScriptButton, self._generateScriptButton))
+        layout.addLayout(utils.generateRow(self._renderButton, self._renderAutoButton))
+        layout.addWidget(self._outputTerminal)
+
+        self.setLayout(layout)
+        self.setFrameShape(QFrame.StyledPanel)
 
     def _finishedOpenCropWindow(self, useBrowserForResize = False):
         """ On finished rendering webm for html window """
