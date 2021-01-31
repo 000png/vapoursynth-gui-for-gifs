@@ -214,12 +214,14 @@ class VSPanelFrame(QFrame):
             return
 
         videoData = self._data['video']
-        if videoData['stateChanged'] and not self._parent.isBrowserResizerToggled():
-            self._subprocessManager.setSubprocess(trimVideo(videoData['filename'], '00:00:00', '00:01:00',
-                trimFilename=os.path.abspath(os.path.join(WORK_DIR, 'resizer.webm')),
-                trimArgs="-vcodec libvpx -acodec libvorbis -preset ultrafast"),
-                self._finishedOpenCropWindow)
-            videoData['stateChanged'] = False
+        if not self._parent.isBrowserResizerToggled():
+            if videoData['stateChanged']:
+                self._subprocessManager.setSubprocess(trimVideo(videoData['filename'], '00:00:00', '00:01:00',
+                    trimFilename=os.path.abspath(os.path.join(WORK_DIR, 'resizer.webm'))),
+                    self._finishedOpenCropWindow)
+                videoData['stateChanged'] = False
+            else:
+                self._finishedOpenCropWindow()
         else:
             ResizerWindow.openInBrowser(self._data['video']['filename'])
 

@@ -67,7 +67,7 @@ class ActionsManager():
             return self._makeToggleAction(connect, '&Show render video', self._icons['toggled'], actionName,
                                           'Toggle showing the render video in the editor')
         elif actionName == 'toggle_browser_resizer':
-            return self._makeToggleAction(connect, '&Use browser for resizer', self._icons['toggled'], actionName,
+            return self._makeToggleAction(connect, '&Open resizer in browser', self._icons['toggled'], actionName,
                                           'Open up the resizer in the default browser')
         else:
             raise ValueError(f"Unrecognized action name {actionName}")

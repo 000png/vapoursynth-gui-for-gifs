@@ -14,7 +14,8 @@ HISTORY_SETTINGS = os.path.join(WORK_DIR, 'ffmpeg_settings.json')
 
 class FfmpegSettingsWindow(QMainWindow):
     """ FFMPEG settings window """
-    DEFAULT_TRIM_FLAGS = "-vcodec libx264 -preset medium -pix_fmt yuv420p"
+    #DEFAULT_TRIM_FLAGS = "-vcodec libx264 -preset ultrafast -pix_fmt yuv420p"
+    DEFAULT_TRIM_FLAGS = "-vcodec libvpx -acodec libvorbis -preset ultrafast"
     DEFAULT_PNG_FLAGS = ""
     DEFAULT_MOV_FLAGS = "-vcodec rawvideo -pix_fmt rgb24 -sws_flags full_chroma_int+accurate_rnd"
     DEFAULT_MP4_FLAGS = "-vcodec libx264 -qp 0"
