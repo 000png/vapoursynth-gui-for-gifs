@@ -19,7 +19,7 @@ def generateMessageBox(message, icon=QMessageBox.Information, windowTitle="Info"
 
 
 def generateRow(label, widgets, setZeroMargins=True):
-    """ Generate horizontal layout composed of two widgets """
+    """ Generate horizontal layout composed of two or more widgets """
     if isinstance(label, str):
         label = QLabel(label)
     

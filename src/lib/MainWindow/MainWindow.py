@@ -12,9 +12,10 @@ import lib.utils.PyQtUtils as utils
 from .ActionsManager import ActionsManager
 from .WaitingSpinnerOverlay import WaitingSpinnerOverlay
 
-from lib.ScriptPanel.ScriptPanel import ScriptFrame
-from lib.VideoPanel.VideoPanel import DualVideoFrame, TOGGLE_ORIGINAL_VIDEO, TOGGLE_RENDER_VIDEO
 from lib.VSPanel.VSPanel import VSPanelFrame
+from lib.ScriptPanel.ScriptPanel import ScriptFrame
+from lib.SubWindows.FfmpegSettingsWindow import FfmpegSettingsWindow
+from lib.VideoPanel.VideoPanel import DualVideoFrame, TOGGLE_ORIGINAL_VIDEO, TOGGLE_RENDER_VIDEO
 
 TOGGLE_BROWSER_RESIZER = 'toggle_browser_resizer'
 
@@ -86,6 +87,12 @@ class MainWindow(QMainWindow):
         settingsMenu = menuBar.addMenu('&Settings')
         settingsMenu.addAction(self._actionsManager.makeAction(TOGGLE_BROWSER_RESIZER,
                                lambda: self._toggleAction(TOGGLE_BROWSER_RESIZER)))
+        settingsMenu.addAction(self._actionsManager.makeAction('ffmpeg_settings', self._openFfmpegSettingsWindow))
+
+    def _openFfmpegSettingsWindow(self):
+        """ Open FFMPEG settings window """
+        window = FfmpegSettingsWindow(self)
+        window.show()
 
     def _saveScript(self):
         """ Save script """

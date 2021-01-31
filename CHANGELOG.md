@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Ability to open resizer in default browser and toggle between that versus opening it up within the GUI
 * Panel sizes are now adjustable
+* FFMPEG Settings Window (`SubWindows/FfmpegSettingsWindow`) to modify flags used for FFMPEG when rendering certain files/running certain commands
 
 ### Changed
 

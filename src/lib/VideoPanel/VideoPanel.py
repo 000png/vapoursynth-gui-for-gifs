@@ -6,6 +6,8 @@ from PyQt5.Qt import QMargins
 from PyQt5.QtWidgets import QGridLayout, QFrame
 from .VideoPlayerWidget import VideoPlayerWidget
 
+ORIGINAL_VIDEO = 'original'
+RENDER_VIDEO = 'render'
 TOGGLE_ORIGINAL_VIDEO = 'toggle_original_video'
 TOGGLE_RENDER_VIDEO = 'toggle_render_video'
 
@@ -36,24 +38,24 @@ class DualVideoFrame(QFrame):
 
     def loadVideoFile(self, filename, videoType=None, forceLoad=False):
         """ Load video file """
-        if videoType not in [None, TOGGLE_ORIGINAL_VIDEO, TOGGLE_RENDER_VIDEO]:
+        if videoType not in [None, ORIGINAL_VIDEO, RENDER_VIDEO]:
             raise ValueError(f'Unrecognized videoType {videoType}')
 
         self.clearVideo(videoType)
 
-        if (not videoType or videoType == TOGGLE_ORIGINAL_VIDEO) and (self._originalVideo.isVisible() or forceLoad):
+        if (not videoType or videoType == ORIGINAL_VIDEO) and (self._originalVideo.isVisible() or forceLoad):
             self._originalVideo.loadVideoFile(filename)
-        if (not videoType or videoType == TOGGLE_RENDER_VIDEO) and (self._renderVideo.isVisible() or forceLoad):
+        if (not videoType or videoType == RENDER_VIDEO) and (self._renderVideo.isVisible() or forceLoad):
             self._renderVideo.loadVideoFile(filename)
 
     def clearVideo(self, videoType=None):
         """ Clear video """
-        if videoType not in [None, TOGGLE_ORIGINAL_VIDEO, TOGGLE_RENDER_VIDEO]:
+        if videoType not in [None, ORIGINAL_VIDEO, RENDER_VIDEO]:
             raise ValueError(f'Unrecognized videoType {videoType}')
 
-        if (not videoType or videoType == TOGGLE_ORIGINAL_VIDEO):
+        if (not videoType or videoType == ORIGINAL_VIDEO):
             self._originalVideo.clearVideo()
-        if (not videoType or videoType == TOGGLE_RENDER_VIDEO):
+        if (not videoType or videoType == ORIGINAL_VIDEO):
             self._renderVideo.clearVideo()
 
     def toggleVideo(self, videoType, forceClose=False, forceOpen=False):

@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QWidget, QPushButton, QComboBox, QLabel, QVBoxLayout
     QPlainTextEdit, QFileDialog, QStackedLayout, QStyle, QFrame
 
 import lib.utils.PyQtUtils as utils
-from lib.Resizer.ResizerWindow import ResizerWindow
+from lib.SubWindows.ResizerWindow import ResizerWindow
 from lib.utils.SubprocessManager import SubprocessManager
 from lib.utils.SubprocessUtils import checkVSScript, renderVSVideo, trimVideo, TRIMMED_FILENAME
 
@@ -204,8 +204,8 @@ class VSPanelFrame(QFrame):
         """ On finished rendering webm for html window """
         result, out, err = self._subprocessManager.getFinishedSubprocessResults()
         if result == 0:
-            self._resizeWindow = ResizerWindow(self._parent)
-            self._resizeWindow.show()
+            resizeWindow = ResizerWindow(self._parent)
+            resizeWindow.show()
 
     def openResizer(self):
         """ Open resize crop window """

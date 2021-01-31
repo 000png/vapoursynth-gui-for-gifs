@@ -58,11 +58,13 @@ class ActionsManager():
             return self._makeGenericAction(connect, '&Exit', self._icons['exit'], 'Exit application', 'Ctrl+Q')
         elif actionName == 'resizer':
             return self._makeGenericAction(connect, '&Resize and crop', self._icons['open'], 'Resize and crop video', 'Ctrl+R')
+        elif actionName == 'ffmpeg_settings':
+            return self._makeGenericAction(connect, '&FFMPEG Settings', self._icons['exit'], 'FFMPEG settings')
         elif actionName == 'toggle_original_video':
-            return self._makeToggleAction(connect, '&Toggle original video', self._icons['toggled'], actionName,
+            return self._makeToggleAction(connect, '&Show original video', self._icons['toggled'], actionName,
                                           'Toggle showing the original video in the editor')
         elif actionName == 'toggle_render_video':
-            return self._makeToggleAction(connect, '&Toggle render video', self._icons['toggled'], actionName,
+            return self._makeToggleAction(connect, '&Show render video', self._icons['toggled'], actionName,
                                           'Toggle showing the render video in the editor')
         elif actionName == 'toggle_browser_resizer':
             return self._makeToggleAction(connect, '&Use browser for resizer', self._icons['toggled'], actionName,
