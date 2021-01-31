@@ -11,6 +11,7 @@ RENDER_VIDEO = 'render'
 TOGGLE_ORIGINAL_VIDEO = 'toggle_original_video'
 TOGGLE_RENDER_VIDEO = 'toggle_render_video'
 
+
 class DualVideoFrame(QFrame):
     """ Dual video layout """
     def __init__(self, parent=None, filename=None, style=None):

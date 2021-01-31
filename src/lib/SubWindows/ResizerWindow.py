@@ -11,10 +11,10 @@ from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QAction, \
     QFileDialog, QMessageBox, QStyle
 
+from lib.utils.GlobalConstants import WORK_DIR
+
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 HTML_RESIZER_BASE_SCRIPT = os.path.join(SCRIPT_DIR, 'resizer.html')
-
-WORK_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '../../../work'))
 HTML_RESIZER_SCRIPT = os.path.join(WORK_DIR, 'resizer.html')
 
 class ResizerWindow(QMainWindow):

@@ -16,9 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Heavy refactoring, namely:
     * Reorganized source code; rather than split by class type, split by panel function since each panel is pretty self-contained and do not really interact outside of communication between layouts from the MainWindow
-    * Extract `ActionsManager` for `MainWindow`
+    * Extract `MainWindow/ActionsManager` for `MainWindow`
         * This also handles global settings now
     * Modularize how dropdown VS options are handled
+    * Extract `utils/GlobalConstants` for global paths
 * Set resizer descale default to Despline36
 
 ## [v0.2.0] - 2021-01-08

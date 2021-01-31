@@ -6,10 +6,8 @@ import os
 import posixpath
 
 from lib.SubWindows.FfmpegSettingsWindow import FfmpegSettingsWindow
+from .GlobalConstants import WORK_DIR, BIN_DIR
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)).replace(os.sep, posixpath.sep)
-WORK_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '../../../work')).replace(os.sep, posixpath.sep)
-BIN_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '../../bin')).replace(os.sep, posixpath.sep)
 VS_PIPE = os.path.join(BIN_DIR, 'VSPipe.exe').replace(os.sep, posixpath.sep)
 FFMPEG = os.path.join(BIN_DIR, 'ffmpeg/bin/ffmpeg.exe').replace(os.sep, posixpath.sep)
 

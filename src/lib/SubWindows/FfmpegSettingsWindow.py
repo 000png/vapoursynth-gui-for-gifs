@@ -7,10 +7,10 @@ import copy
 import json
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel
 
+from lib.utils.GlobalConstants import WORK_DIR
 from lib.utils.PyQtUtils import generateRow, generateTextEntry, clearAndSetText, generateMessageBox
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-HISTORY_SETTINGS = os.path.abspath(os.path.join(SCRIPT_DIR, '../../../work/ffmpeg_settings.json'))
+HISTORY_SETTINGS = os.path.join(WORK_DIR, 'ffmpeg_settings.json')
 
 class FfmpegSettingsWindow(QMainWindow):
     """ FFMPEG settings window """
