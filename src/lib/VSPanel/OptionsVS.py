@@ -4,10 +4,9 @@ Denoise and sharpen options.
 """
 from PyQt5.QtWidgets import QLabel, QMessageBox
 
-from lib.utils.VSConstants import DENOISE_CONFIG, SHARPEN_CONFIG, TRIM_CONFIG
-from lib.widgets.OptionsBase import OptionsBase
 from lib.utils.PyQtUtils import generateMessageBox
-
+from .VSConstants import DENOISE_CONFIG, SHARPEN_CONFIG, TRIM_CONFIG
+from .OptionsBase import OptionsBase
 
 class DenoiseOptionKNLM(OptionsBase):
     """ Denoise options for KNLM """

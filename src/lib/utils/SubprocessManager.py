@@ -3,7 +3,7 @@
 Helps with managing QProcesses for VSPanelLayout
 """
 from PyQt5.QtCore import QProcess
-from lib.utils.PyQtUtils import clearAndSetText
+from .PyQtUtils import clearAndSetText
 
 
 class SubprocessManager():

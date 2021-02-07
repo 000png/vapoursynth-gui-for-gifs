@@ -4,29 +4,29 @@ Layout containing options for Vapoursynth
 """
 import os
 import re
-import time
 import posixpath
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QPushButton, QComboBox, QLabel, QVBoxLayout, QMessageBox, \
-    QPlainTextEdit, QFileDialog, QStackedLayout, QStyle
+    QPlainTextEdit, QFileDialog, QStackedLayout, QStyle, QFrame
 
 import lib.utils.PyQtUtils as utils
-import lib.utils.VSConstants as c
+from lib.SubWindows.ResizerWindow import ResizerWindow
+from lib.utils.SubprocessManager import SubprocessManager
 from lib.utils.SubprocessUtils import checkVSScript, renderVSVideo, trimVideo, TRIMMED_FILENAME
-from lib.widgets.OptionsVS import DenoiseOptionKNLM, DenoiseOptionBM3D, FineSharpOptions, TrimOptions
-from lib.layouts.ResizeCropWindow import ResizeCropWindow
-from lib.helpers.SubprocessManager import SubprocessManager
-from lib.helpers.PresetManager import PresetManager
+
+from . import VSConstants as c
+from .PresetManager import PresetManager
+from .OptionsVS import DenoiseOptionKNLM, DenoiseOptionBM3D, FineSharpOptions, TrimOptions
 
 CWD = os.getcwd()
-SCRIPT_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__))).replace(os.sep, posixpath.sep)
-WORK_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..\\..\\..\\work')).replace(os.sep, posixpath.sep)
-TMP_VS_SCRIPT = os.path.abspath(os.path.join(WORK_DIR, 'tmp.vpy')).replace(os.sep, posixpath.sep)
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+WORK_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '../../../work'))
+TMP_VS_SCRIPT = os.path.join(WORK_DIR, 'tmp.vpy')
 
 NO_VIDEO_LOADED_SCRIPT = 'A video must be loaded before the script can be generated and validated'
 
 
-class VSPanelLayout(QVBoxLayout):
+class VSPanelFrame(QFrame):
     """
     Main base layout for application
     """
@@ -134,7 +134,7 @@ class VSPanelLayout(QVBoxLayout):
         self._outputFileButton.clicked.connect(self._openOutputFileDialogue)
 
         self._resizeCropButton = QPushButton("Resize And Crop")
-        self._resizeCropButton.clicked.connect(self.openResizeCropWindow)
+        self._resizeCropButton.clicked.connect(self.openResizer)
 
         self._resizeCropText = QPlainTextEdit()
         self._resizeCropText.setPlaceholderText("copy & paste output from the resize/crop window here")
@@ -157,32 +157,34 @@ class VSPanelLayout(QVBoxLayout):
 
     def _generateLayout(self):
         """ Generate layout """
+        layout = QVBoxLayout(self)
+
         outputRow = QWidget()
         outputRow.setLayout(utils.generateRow('Output:', [self._outputFileText, self._outputFileButton]))
-        self.addWidget(outputRow)
+        layout.addWidget(outputRow)
 
         # stack trim options
-        self.addLayout(utils.generateRow('Apply trimming:', self._dropdowns['trim']))
+        layout.addLayout(utils.generateRow('Apply trimming:', self._dropdowns['trim']))
         self._trimOptions, trimStack = utils.generateStackedWidget([self._vsTrimOption])
-        self.addWidget(self._trimOptions)
+        layout.addWidget(self._trimOptions)
         self._trimOptions.hide()
 
-        self.addWidget(self._resizeCropButton)
-        self.addWidget(self._resizeCropText)
-        self.addLayout(utils.generateRow("Preprocessor:", self._dropdowns['preprocessor']))
+        layout.addWidget(self._resizeCropButton)
+        layout.addWidget(self._resizeCropText)
+        layout.addLayout(utils.generateRow("Preprocessor:", self._dropdowns['preprocessor']))
 
         # stack denoise options
-        self.addLayout(utils.generateRow('Denoise', self._dropdowns['denoise']))
+        layout.addLayout(utils.generateRow('Denoise', self._dropdowns['denoise']))
         self._denoiseOptions, denoiseStack = utils.generateStackedWidget(
             [self._knlmOptions, self._bm3dOptions])
-        self.addWidget(self._denoiseOptions)
+        layout.addWidget(self._denoiseOptions)
         self._denoiseOptions.hide()
 
         # stack sharpen options
-        self.addLayout(utils.generateRow("Sharpen", self._dropdowns['sharpen']))
+        layout.addLayout(utils.generateRow("Sharpen", self._dropdowns['sharpen']))
         self._sharpenOptions, sharpenStack = utils.generateStackedWidget(
             [self._fineSharpOptions])
-        self.addWidget(self._sharpenOptions)
+        layout.addWidget(self._sharpenOptions)
         self._sharpenOptions.hide()
 
         self._stacks = {
@@ -191,35 +193,37 @@ class VSPanelLayout(QVBoxLayout):
             'trim': trimStack
         }
 
-        self.addLayout(utils.generateRow(self._checkVSScriptButton, self._generateScriptButton))
-        self.addLayout(utils.generateRow(self._renderButton, self._renderAutoButton))
-        self.addWidget(self._outputTerminal)
+        layout.addLayout(utils.generateRow(self._checkVSScriptButton, self._generateScriptButton))
+        layout.addLayout(utils.generateRow(self._renderButton, self._renderAutoButton))
+        layout.addWidget(self._outputTerminal)
 
-    def _finishedOpenCropWindow(self, useBrowserForResize = False):
+        self.setLayout(layout)
+        self.setFrameShape(QFrame.StyledPanel)
+
+    def _finishedOpenCropWindow(self):
         """ On finished rendering webm for html window """
-        if not useBrowserForResize:
-            result, out, err = self._subprocessManager.getFinishedSubprocessResults()
-            if result == 0:
-                self._resizeWindow = ResizeCropWindow(self._parent)
-                self._resizeWindow.show()
-        else:
-            ResizeCropWindow.openInBrowser(self._data['video']['filename'])
+        result, out, err = self._subprocessManager.getFinishedSubprocessResults()
+        if result == 0:
+            resizeWindow = ResizerWindow(self._parent)
+            resizeWindow.show()
 
-    def openResizeCropWindow(self):
+    def openResizer(self):
         """ Open resize crop window """
         if 'video' not in self._data:
             utils.clearAndSetText(self._outputTerminal, "A video must be loaded in order to crop/resize it", clear=False, setTimestamp=True)
             return
 
         videoData = self._data['video']
-        if videoData['stateChanged'] and not self._parent._useBrowserForResizer:
-            self._subprocessManager.setSubprocess(trimVideo(videoData['filename'], '00:00:00', '00:01:00',
-                trimFilename=os.path.abspath(os.path.join(WORK_DIR, 'resizer.webm')),
-                trimArgs="-vcodec libvpx -acodec libvorbis -preset ultrafast"),
-                self._finishedOpenCropWindow)
-            videoData['stateChanged'] = False
+        if not self._parent.isBrowserResizerToggled():
+            if videoData['stateChanged']:
+                self._subprocessManager.setSubprocess(trimVideo(videoData['filename'], '00:00:00', '00:01:00',
+                    trimFilename=os.path.abspath(os.path.join(WORK_DIR, 'resizer.webm'))),
+                    self._finishedOpenCropWindow)
+                videoData['stateChanged'] = False
+            else:
+                self._finishedOpenCropWindow()
         else:
-            self._finishedOpenCropWindow(self._parent._useBrowserForResizer)
+            ResizerWindow.openInBrowser(self._data['video']['filename'])
 
     def _finishedCheckScriptOkay(self):
         """ On finished calling VSPipe to check if script is okay """
