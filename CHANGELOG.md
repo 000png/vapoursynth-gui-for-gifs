@@ -4,7 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.3.0] - In progress
+## [v0.3.0] - 2021-02-07
+
+* [Associated PR](https://github.com/000png/vapoursynth-gui-for-gifs/pull/11)
 
 ### Added
 
@@ -39,7 +41,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v0.1.0] - 2020-12-30
 * [Associated PR](https://github.com/000png/vapoursynth-gui-for-gifs/pull/1)
-* [Associated Commit Hash](https://github.com/000png/vapoursynth-gui-for-gifs/commit/f74cc8dffebfafd3bc6a95b77101806aa9c6dc4c)
 * Initial project setup.
 
 ### Added
